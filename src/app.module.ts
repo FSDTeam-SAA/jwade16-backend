@@ -22,7 +22,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get('database.uri'),
+        uri: configService.get('DATABASE_URL'),
       }),
       inject: [ConfigService],
     }),

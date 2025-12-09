@@ -1,16 +1,17 @@
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { sanitizeMiddleware } from './common/middleware/sanitize.middleware';
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security
   app.use(helmet());
-  app.use(mongoSanitize.default());
+  app.use(sanitizeMiddleware);
 
   // CORS
   app.enableCors();
@@ -32,6 +33,16 @@ async function bootstrap() {
 
   // Global filters
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Swagger Configuration
+  const config = new DocumentBuilder()
+    .setTitle('JWade16 Backend API')
+    .setDescription('The JWade16 Backend API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT || 3000);
 }

@@ -10,6 +10,7 @@ import { randomInt } from 'crypto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { CLIENT_RENEG_LIMIT } from 'tls';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,7 @@ export class AuthService {
     private userService: UserService,
     private emailService: EmailService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(
     firstName: string,
@@ -36,6 +37,7 @@ export class AuthService {
       password,
     });
 
+
     // 2️⃣ Generate OTP
     const otp = this.generateOtp();
 
@@ -43,8 +45,10 @@ export class AuthService {
     user.verificationInfo.token = otp;
     await user.save();
 
+
     // 4️⃣ Send OTP email
     await this.emailService.sendOtpMail(email, otp);
+
 
     return {
       message: 'User registered successfully. OTP sent to email.',
@@ -83,7 +87,7 @@ export class AuthService {
     if (!match) throw new UnauthorizedException('Invalid credentials');
 
     const payload = {
-      sub: (user as { _id: string })._id,
+      sub: (user as any)._id,
       role: user.role,
       name: user.firstName + ' ' + user.lastName,
     };
