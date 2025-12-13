@@ -13,6 +13,7 @@ import { SharedModule } from './modules/shared/shared.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { OccupationModule } from './occupation/occupation.module';
+import { UserSelectionModule } from './modules/user-selection/user-selection.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { OccupationModule } from './occupation/occupation.module';
     AuthModule,
     SharedModule,
     OccupationModule,
+    UserSelectionModule,
   ],
   controllers: [AppController],
   providers: [

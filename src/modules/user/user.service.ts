@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './user.schema';
-import { StoryInfo, StoryInfoDocument } from '../story/storyInfo.schema';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import cloudinary from '../../common/cloudinary';
@@ -16,18 +15,9 @@ interface LeanUser {
   address?: string;
 }
 
-interface StoryCount {
-  _id: Types.ObjectId;
-  count: number;
-}
-
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(StoryInfo.name)
-    private storyInfoModel: Model<StoryInfoDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(data: Partial<User>): Promise<UserDocument> {
     if (!data.password) throw new Error('Password is required');
@@ -59,15 +49,8 @@ export class UserService {
 
     // Get story counts for all users in this page
     const userIds = users.map((user) => user._id);
-    const storyCounts = await this.storyInfoModel.aggregate<StoryCount>([
-      { $match: { userId: { $in: userIds } } },
-      { $group: { _id: '$userId', count: { $sum: 1 } } },
-    ]);
 
     // Create a map of userId to story count
-    const storyCountMap = new Map(
-      storyCounts.map((item) => [item._id.toString(), item.count]),
-    );
 
     // Add totalStories to each user
     const usersWithStoryCount = users.map((user) => ({
@@ -75,7 +58,6 @@ export class UserService {
       lastName: user.lastName,
       email: user.email,
       address: user.address || '',
-      totalStories: storyCountMap.get(user._id.toString()) || 0,
     }));
 
     const totalPages = Math.ceil(total / limit);
