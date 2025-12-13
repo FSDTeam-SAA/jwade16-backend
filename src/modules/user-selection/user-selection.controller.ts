@@ -25,6 +25,29 @@ export class UserSelectionController {
   }
 
   @Public()
+  @Post('pay-power')
+  async evaluatePayPower(
+    @Body() createUserSelectionDto: CreateUserSelectionDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.userSelectionService.evaluatePayPower(
+      createUserSelectionDto,
+    );
+
+    const responseData = {
+      payPowerScore: result.payPowerScore,
+      marketGapDetected: result.marketGap,
+    };
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'Pay Power Score calculated successfully',
+      data: responseData,
+    });
+  }
+
+  @Public()
   @Get()
   async findAll(@Res() res: Response) {
     const data = await this.userSelectionService.findAll();

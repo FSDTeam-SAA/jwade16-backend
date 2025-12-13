@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsEmail, IsNotEmpty } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
 
 export class CreateUserSelectionDto {
   @IsString()
@@ -13,9 +13,9 @@ export class CreateUserSelectionDto {
   @IsNotEmpty()
   location: string;
 
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  compensation: number;
+  compensation: string; // range label, e.g., "Under $50k", "$50k-$75k", "$300k+"
 
   @IsString()
   @IsNotEmpty()

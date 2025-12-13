@@ -16,7 +16,10 @@ export class UserSelection extends BaseSchema {
   location: string;
 
   @Prop({ required: true })
-  compensation: number;
+  compensation: string; // user-provided range label
+
+  @Prop()
+  compensationValue?: number; // parsed numeric midpoint for calculations
 
   @Prop({ required: true })
   lastRaise: string;
@@ -35,6 +38,9 @@ export class UserSelection extends BaseSchema {
 
   @Prop()
   payPowerScore?: string;
+
+  @Prop()
+  marketGap?: string;
 }
 
 export const UserSelectionSchema = SchemaFactory.createForClass(UserSelection);
