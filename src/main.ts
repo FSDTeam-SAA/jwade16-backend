@@ -14,7 +14,14 @@ async function bootstrap() {
   app.use(sanitizeMiddleware);
 
   // CORS
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://jwade16.vercel.app',
+    ],
+    credentials: true,
+  });
 
   // Versioning
   app.enableVersioning({
