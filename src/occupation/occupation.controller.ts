@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { OccupationService } from './occupation.service';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -11,5 +11,11 @@ export class OccupationController {
   importData() {
     console.log('Importing data...');
     return this.occupationService.importFromJson();
+  }
+
+  @Public()
+  @Get('titles')
+  getUniqueOccupationTitles() {
+    return this.occupationService.getUniqueOccupationTitles();
   }
 }

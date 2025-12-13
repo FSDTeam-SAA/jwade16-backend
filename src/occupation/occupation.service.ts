@@ -69,6 +69,11 @@ export class OccupationService {
     return { inserted: result.length };
   }
 
+  async getUniqueOccupationTitles(): Promise<string[]> {
+    const titles = await this.occupationModel.distinct('OCC_TITLE').exec();
+    return titles.filter((title) => title != null).sort();
+  }
+
   private toNumber(value: string | number | null | undefined): number | null {
     if (!value) return null;
     return Number(String(value).replace(/,/g, ''));
