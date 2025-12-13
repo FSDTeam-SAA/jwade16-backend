@@ -71,7 +71,8 @@ export class OccupationService {
 
   async getUniqueOccupationTitles(): Promise<string[]> {
     const titles = await this.occupationModel.distinct('OCC_TITLE').exec();
-    return titles.filter((title) => title != null).sort();
+    const data = titles.filter((title) => title != null).sort();
+    return data;
   }
 
   private toNumber(value: string | number | null | undefined): number | null {
