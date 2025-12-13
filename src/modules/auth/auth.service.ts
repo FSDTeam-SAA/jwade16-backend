@@ -10,7 +10,13 @@ import { randomInt } from 'crypto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { CLIENT_RENEG_LIMIT } from 'tls';
+
+interface ResetTokenPayload {
+  sub: string;
+  type: 'reset';
+  iat: number;
+  exp: number;
+}
 
 @Injectable()
 export class AuthService {
@@ -18,7 +24,7 @@ export class AuthService {
     private userService: UserService,
     private emailService: EmailService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   async register(
     firstName: string,
@@ -37,7 +43,6 @@ export class AuthService {
       password,
     });
 
-
     // 2️⃣ Generate OTP
     const otp = this.generateOtp();
 
@@ -45,10 +50,8 @@ export class AuthService {
     user.verificationInfo.token = otp;
     await user.save();
 
-
     // 4️⃣ Send OTP email
     await this.emailService.sendOtpMail(email, otp);
-
 
     return {
       message: 'User registered successfully. OTP sent to email.',
@@ -87,7 +90,7 @@ export class AuthService {
     if (!match) throw new UnauthorizedException('Invalid credentials');
 
     const payload = {
-      sub: (user as any)._id,
+      sub: String(user._id),
       role: user.role,
       name: user.firstName + ' ' + user.lastName,
     };
@@ -103,8 +106,7 @@ export class AuthService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-    await this.userService.updateUserInternal((user as any)._id, {
+    await this.userService.updateUserInternal(String(user._id), {
       'verificationInfo.resetOtp': otp,
       'verificationInfo.resetOtpExpiry': expiry,
     });
@@ -131,14 +133,12 @@ export class AuthService {
 
     // 🪙 issue temporary reset token
     const resetToken = await this.jwtService.signAsync(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      { sub: (user as any)._id, type: 'reset' },
+      { sub: String(user._id), type: 'reset' },
       { expiresIn: '10m' }, // 10 minutes
     );
 
     // clear OTP (optional)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-    await this.userService.updateUserInternal((user as any)._id, {
+    await this.userService.updateUserInternal(String(user._id), {
       'verificationInfo.resetOtp': null,
       'verificationInfo.resetOtpExpiry': null,
     });
@@ -156,14 +156,11 @@ export class AuthService {
   // utility to verify reset token
   async verifyResetToken(token: string): Promise<string> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const payload = await this.jwtService.verifyAsync(token);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const payload =
+        await this.jwtService.verifyAsync<ResetTokenPayload>(token);
       if (payload.type !== 'reset')
         throw new UnauthorizedException('Invalid token');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
       return payload.sub;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');
     }

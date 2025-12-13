@@ -12,7 +12,11 @@ export class UpdateUserDto {
   @IsString()
   lastName?: string;
 
-  @ApiProperty({ example: '1990-01-01', description: 'Date of birth', required: false })
+  @ApiProperty({
+    example: '1990-01-01',
+    description: 'Date of birth',
+    required: false,
+  })
   @IsOptional()
   @IsDateString()
   dateOfBirth?: Date;
@@ -22,12 +26,20 @@ export class UpdateUserDto {
   @IsString()
   gender?: string;
 
-  @ApiProperty({ example: '123 Main St', description: 'Address', required: false })
+  @ApiProperty({
+    example: '123 Main St',
+    description: 'Address',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   address?: string;
 
-  @ApiProperty({ example: 1234567890, description: 'Phone number', required: false })
+  @ApiProperty({
+    example: 1234567890,
+    description: 'Phone number',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   phoneNum?: number;

@@ -8,6 +8,11 @@ import {
 import { Response } from 'express';
 import { MongoError } from 'mongodb';
 
+interface HttpExceptionResponse {
+  message?: string;
+  errors?: any[];
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
@@ -24,9 +29,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object') {
-        message = (exceptionResponse as any).message || message;
-        errors = (exceptionResponse as any).errors || errors;
+      } else if (typeof exceptionResponse === 'object' && exceptionResponse) {
+        message =
+          (exceptionResponse as HttpExceptionResponse).message || message;
+        errors = (exceptionResponse as HttpExceptionResponse).errors || errors;
       }
     } else if (exception instanceof MongoError) {
       status = HttpStatus.BAD_REQUEST;

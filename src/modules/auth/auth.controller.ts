@@ -6,8 +6,14 @@ import {
   Headers,
   Req,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { sendResponse } from '../../common/utils/sendResponse.js';
@@ -21,7 +27,7 @@ import { Public } from '../../common/decorators/public.decorator';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Public()
   @Post('register')
@@ -137,11 +143,13 @@ export class AuthController {
   async changePassword(
     @Req() req: Request,
     @Body('oldPassword') oldPassword: string,
-    @Body('newPassword') newPassword: string,
+    @Body('newPassword') newPassword:string,
     @Res() res: Response,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const userId = (req as any).user?.userId;
+    const userId = (req as { user?: { userId: string } }).user?.userId;
+    if (!userId) {
+      throw new UnauthorizedException('User not found in request');
+    }
 
     const result = await this.authService.changePassword(
       userId,

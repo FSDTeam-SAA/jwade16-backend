@@ -9,8 +9,16 @@ import {
   UploadedFile,
   Get,
   Query,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,7 +30,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
@@ -69,7 +77,10 @@ export class UserController {
     @Res() res: Response,
     @UploadedFile() avatar?: Express.Multer.File,
   ) {
-    const userId = (req.user as any)?.userId;
+    const userId = (req as { user?: { userId: string } }).user?.userId;
+    if (!userId) {
+      throw new UnauthorizedException('User ID not found on request.');
+    }
     console.log('userId', userId);
     const updatedUser = await this.userService.updateUser(
       userId,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { StoryInfo, StoryInfoDocument } from '../story/storyInfo.schema';
 import * as bcrypt from 'bcrypt';
@@ -8,6 +8,18 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import cloudinary from '../../common/cloudinary';
 import { Express } from 'express';
 
+interface LeanUser {
+  _id: Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  email: string;
+  address?: string;
+}
+
+interface StoryCount {
+  _id: Types.ObjectId;
+  count: number;
+}
 
 @Injectable()
 export class UserService {
@@ -15,7 +27,7 @@ export class UserService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(StoryInfo.name)
     private storyInfoModel: Model<StoryInfoDocument>,
-  ) { }
+  ) {}
 
   async create(data: Partial<User>): Promise<UserDocument> {
     if (!data.password) throw new Error('Password is required');
@@ -42,12 +54,12 @@ export class UserService {
       .select('firstName lastName email address')
       .skip(skip)
       .limit(limit)
-      .lean()
+      .lean<LeanUser[]>()
       .exec();
 
     // Get story counts for all users in this page
     const userIds = users.map((user) => user._id);
-    const storyCounts = await this.storyInfoModel.aggregate([
+    const storyCounts = await this.storyInfoModel.aggregate<StoryCount>([
       { $match: { userId: { $in: userIds } } },
       { $group: { _id: '$userId', count: { $sum: 1 } } },
     ]);
@@ -82,7 +94,7 @@ export class UserService {
     updateUserDto: UpdateUserDto,
     avatar?: Express.Multer.File,
   ): Promise<Partial<User> | null> {
-    const updateData: any = { ...updateUserDto };
+    const updateData: Partial<User> = { ...updateUserDto };
 
     if (avatar) {
       const b64 = Buffer.from(avatar.buffer).toString('base64');

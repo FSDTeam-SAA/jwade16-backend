@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { OccupationModule } from './occupation/occupation.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     UserModule,
     AuthModule,
     SharedModule,
+    OccupationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -53,4 +55,4 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
