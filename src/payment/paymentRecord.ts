@@ -5,11 +5,11 @@ export type PaymentDocument = PaymentRecord & Document;
 
 @Schema({ timestamps: true })
 export class PaymentRecord {
-  @Prop()
+  @Prop({ required: true })
   userId: string;
 
-  @Prop()
-  paymentType: string;
+  @Prop({ required: true })
+  paymentType: string; // stripe
 
   @Prop()
   seasonId: string;
@@ -17,11 +17,11 @@ export class PaymentRecord {
   @Prop()
   paymentIntent: string;
 
-  @Prop()
+  @Prop({ required: true })
   totalAmount: number;
 
-  @Prop()
-  paymentStatus: string;
+  @Prop({ default: 'pending' })
+  paymentStatus: string; // pending | success | failed
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(PaymentRecord);

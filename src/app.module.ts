@@ -29,6 +29,8 @@ import { PaymentModule } from './payment/payment.module';
       }),
       inject: [ConfigService],
     }),
+    PaymentModule,
+
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -44,7 +46,6 @@ import { PaymentModule } from './payment/payment.module';
     SharedModule,
     OccupationModule,
     UserSelectionModule,
-    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
