@@ -18,25 +18,51 @@ export class PaymentService {
     });
   }
 
-  /* Create Stripe PaymentIntent */
+  /* Create Stripe Checkout Session */
   async createStripePayment(dto: CreatePaymentDto) {
-    const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: Math.round(dto.totalAmount * 100), // cents
-      currency: 'usd',
+    const successUrl =
+      dto.successUrl ||
+      process.env.STRIPE_SUCCESS_URL ||
+      'http://localhost:3000/payment/success';
+    const cancelUrl =
+      dto.cancelUrl ||
+      process.env.STRIPE_CANCEL_URL ||
+      'http://localhost:3000/payment/cancel';
+
+    // Create a Checkout Session so we can send the hosted payment page URL back to the client
+    const session = await this.stripe.checkout.sessions.create({
+      mode: 'payment',
       payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: { name: dto.description || 'Payment' },
+            unit_amount: Math.round(dto.totalAmount * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId: dto.userId,
+        seasonId: dto.seasonId || '',
+      },
     });
 
     const payment = await this.paymentModel.create({
       userId: dto.userId,
       seasonId: dto.seasonId,
       paymentType: 'stripe',
-      paymentIntent: paymentIntent.id,
+      paymentIntent: (session.payment_intent as string) || undefined,
+      checkoutSessionId: session.id,
       totalAmount: dto.totalAmount,
       paymentStatus: 'pending',
     });
 
     return {
-      clientSecret: paymentIntent.client_secret,
+      checkoutUrl: session.url, // Hosted Stripe Checkout page
       paymentId: payment._id,
     };
   }

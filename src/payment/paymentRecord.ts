@@ -17,6 +17,9 @@ export class PaymentRecord {
   @Prop()
   paymentIntent: string;
 
+  @Prop()
+  checkoutSessionId: string;
+
   @Prop({ required: true })
   totalAmount: number;
 

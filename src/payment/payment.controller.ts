@@ -15,6 +15,7 @@ export class PaymentController {
   }
 
   /* Get all payments (admin) */
+  @Public()
   @Get()
   getAllPayments() {
     return this.paymentService.getAllPayments();
