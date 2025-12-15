@@ -15,6 +15,7 @@ import {
 type BenchmarkKey = 'A_PCT10' | 'A_MEDIAN' | 'A_PCT90';
 
 export interface PayPowerScoreResult {
+  _id: string;
   currentRole: string;
   experience: string;
   location: string;
@@ -90,7 +91,7 @@ export class UserSelectionService {
         : 'At or Above Market';
 
     // Persist this evaluation in the UserSelection collection
-    await this.userSelectionModel.create({
+    const createdSelection = await this.userSelectionModel.create({
       ...dto,
       compensationValue,
       payPowerScore: String(payPowerScore),
@@ -98,6 +99,7 @@ export class UserSelectionService {
     });
 
     return {
+      _id: createdSelection._id.toString(),
       currentRole: dto.currentRole,
       experience: dto.experience,
       location: dto.location,
