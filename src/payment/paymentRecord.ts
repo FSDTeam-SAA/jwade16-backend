@@ -9,7 +9,7 @@ export class PaymentRecord {
   userId: string;
 
   @Prop({ required: true })
-  paymentType: string; // stripe
+  paymentType: string; // fullReport // BookSeason
 
   @Prop()
   seasonId: string;
