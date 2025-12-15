@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { OccupationModule } from './occupation/occupation.module';
 import { UserSelectionModule } from './modules/user-selection/user-selection.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { UserSelectionModule } from './modules/user-selection/user-selection.mod
     SharedModule,
     OccupationModule,
     UserSelectionModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
