@@ -13,7 +13,15 @@ export class PaymentService {
     @InjectModel(PaymentRecord.name)
     private paymentModel: Model<PaymentDocument>,
   ) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+    if (!stripeSecretKey) {
+      throw new Error(
+        'STRIPE_SECRET_KEY is not defined in environment variables. Please add it to your .env file.',
+      );
+    }
+
+    this.stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2025-11-17.clover',
     });
   }
