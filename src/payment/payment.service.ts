@@ -52,6 +52,7 @@ export class PaymentService {
   /* Create Stripe Checkout Session */
   async createStripePayment(dto: CreatePaymentDto) {
     const successUrl = this.getSuccessUrl(dto.paymentType);
+    console.log('siccessUrl', successUrl);
     const cancelUrl =
       dto.cancelUrl ||
       process.env.STRIPE_CANCEL_URL ||
