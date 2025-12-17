@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import Stripe from 'stripe';
 import { PaymentRecord, PaymentDocument } from './paymentRecord';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentDto, PaymentType } from './dto/create-payment.dto';
 
 @Injectable()
 export class PaymentService {
