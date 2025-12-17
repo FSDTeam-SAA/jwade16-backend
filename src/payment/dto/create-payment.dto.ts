@@ -1,4 +1,9 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+
+export enum PaymentType {
+  FULL_REPORT = 'fullReport',
+  BOOK_SEASON = 'bookSeason',
+}
 
 export class CreatePaymentDto {
   @IsString()
@@ -22,4 +27,7 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsEnum(PaymentType)
+  paymentType: PaymentType;
 }
