@@ -1,0 +1,113 @@
+{
+  "payPowerReports": [
+    {
+      "scoreRange": "0-20",
+      "payPower": "CRITICAL",
+      "icon": "Alert/Warning",
+      "colorScheme": "Red (critical)",
+      "uncomfortableTruth": "Right now, employers don't see a business case to pay you more. Not because you're bad but because your role, signal, or positioning doesn't justify it yet.",
+      "whatThisUsuallyLooksLike": [
+        "Raises framed as \"budgets\" instead of performance",
+        "Promotions discussed, then delayed indefinitely",
+        "Negotiations quietly reframed as \"future conversations\""
+      ],
+      "whatMostPeopleGetWrong": "They negotiate harder. That lowers credibility and locks in underpayment.",
+      "realRisk": "Staying here too long can permanently reset your earnings trajectory downward. Every year at this level is compounding loss.",
+      "whatMovesTheScore": "Stop negotiating. Start rebuilding your market signal. You need proof of impact, scope expansion, or a role/title that commands respect before any conversation will land.",
+      "nextMove": {
+        "timeframe": "Next 72 hours",
+        "action": "Book a Consultation and we'll map the fastest path to 40 and show you what that's worth over 5 years.",
+        "ctaButton": "Look Here"
+      }
+    },
+    {
+      "scoreRange": "21-40",
+      "payPower": "FRAGILE",
+      "icon": "Shield",
+      "colorScheme": "Orange (warning)",
+      "uncomfortableTruth": "You think you have leverage but it evaporates under pressure. Your pay outcomes depend more on timing and personalities than merit. That's not power. That's luck.",
+      "whatThisUsuallyLooksLike": [
+        "You win concessions in good cycles, lose momentum in bad ones",
+        "Your comp feels \"almost right\" but never fully right",
+        "Raises feel like gifts, not inevitabilities"
+      ],
+      "whatMostPeopleGetWrong": "They assume effort equals leverage. It doesn't. Market signal does.",
+      "realRisk": "Accepting \"pretty good\" offers creates silent long-term losses. Over 10 years, the gap between \"pretty good\" and \"optimized\" is $600K.",
+      "whatMovesTheScore": "Document your wins with dollar impact. Fix title misalignment. Add external validation (offers, interviews, visible projects). Then re-anchor with proof.",
+      "nextMove": {
+        "timeframe": "Next 72 hours",
+        "action": "Partner with us and learn how to turn vague wins into undeniable leverage you can negotiate with.",
+        "ctaButton": "Book Here"
+      }
+    },
+    {
+      "scoreRange": "41-60",
+      "payPower": "DEVELOPING",
+      "icon": "Trending Up",
+      "colorScheme": "Yellow / Amber (caution)",
+      "uncomfortableTruth": "You do have leverage; you just don't know how to extract it. You negotiate, but you're anchoring 30% below your real value.",
+      "whatThisUsuallyLooksLike": [
+        "Reasonable offers accepted too quickly",
+        "Conservative anchors to avoid friction",
+        "Relief after negotiation instead of confidence"
+      ],
+      "whatMostPeopleGetWrong": "They think fairness equals optimality. It doesn't. Employers expect you to push. Not pushing signals you don't know your value.",
+      "realRisk": "Small under-anchors compound into massive career-long losses. A $10K under-anchor today becomes $300K+ over a career.",
+      "whatMovesTheScore": "Learn to anchor high without flinching. Use total comp framing (not just salary). Sequence conversations so you never show your hand first.",
+      "nextMove": {
+        "timeframe": "Next 72 hours",
+        "action": "Join us and get the exact scripts and frameworks that turn low offers into high offers (30%+).",
+        "ctaButton": "Book Here"
+      }
+    },
+    {
+      "scoreRange": "61-80",
+      "payPower": "STRONG",
+      "icon": "Lightning / Zap",
+      "colorScheme": "Blue (strong)",
+      "uncomfortableTruth": "You have leverage most people never reach. Employers already expect you to negotiate; you just don't fully exploit it.",
+      "whatThisUsuallyLooksLike": [
+        "Strong offers with hidden flexibility in equity or scope",
+        "You win, but leave $50K–$200K on the table",
+        "Wins that feel good but not decisive"
+      ],
+      "whatMostPeopleGetWrong": "They push harder instead of smarter. Brute-force negotiation at this level burns bridges and caps upside.",
+      "realRisk": "Misplaying leverage can cost equity, influence, and long-term upside. You're negotiating against sophisticated buyers now.",
+      "whatMovesTheScore": "Restraint. Competing signals. Strategic silence. Knowing when to push and when to let them chase you. Mastery of equity vs cash tradeoffs.",
+      "nextMove": {
+        "timeframe": "Next 72 hours",
+        "action": "Meet with us and get the Competing Offers Playbook on how to sequence multiple offers for maximum leverage.",
+        "ctaButton": "Look Here"
+      }
+    },
+    {
+      "scoreRange": "81-100",
+      "payPower": "ELITE",
+      "icon": "Crown",
+      "colorScheme": "Purple (elite/premium)",
+      "uncomfortableTruth": "You are not negotiating; you are architecting your career like a portfolio. You think in compounding equity, optionality, and exit value.",
+      "whatThisUsuallyLooksLike": [
+        "Recruiters expect counteroffers and build in room",
+        "Employers assume flexibility and come prepared",
+        "The real value is hidden in structure, not salary"
+      ],
+      "whatMostPeopleGetWrong": "They chase short-term wins instead of long-term compounding. Optimizing a single offer is amateur hour at this level.",
+      "realRisk": "Your biggest risk isn't rejection; it's choosing the wrong hill to die on. Bad equity structure can cost you millions.",
+      "whatMovesTheScore": "Portfolio thinking. Understanding vesting cliffs, strike prices, post-termination exercise windows. Playing the long game on equity, influence, and optionality.",
+      "nextMove": {
+        "timeframe": "Next 72 hours",
+        "action": "Book a Private Equity Strategy Session and we'll model your total comp vs long-term wealth and find the $500K in hidden value.",
+        "ctaButton": "Schedule Now"
+      }
+    }
+  ],
+  "footer": {
+    "footerMessage": "Your score isn't permanent. It's a snapshot of your current leverage. Every point you move up could be worth real money.",
+    "importantContent": {
+      "description": "This score is a diagnostic tool based on market patterns, not personalized advice for your specific situation.",
+      "whatThisScoreDoes": "Shows you where you likely stand and what typically moves the needle at each level.",
+      "whatThisScoreDoesNotDo": "Replace strategy tailored to your specific situation, company, or goals."
+    },
+    "legalDisclaimer": "Pay Power Score provides educational insights based on market patterns. Individual results vary based on performance, market conditions, and personal circumstances. This tool does not constitute legal, financial, or career advice. For personalized guidance, consult a qualified professional."
+  }
+}

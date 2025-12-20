@@ -8,12 +8,15 @@ import {
   OccupationSchema,
 } from '../../occupation/occupation.schema';
 
+import { PaypowerModule } from '../paypower/paypower.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: UserSelection.name, schema: UserSelectionSchema },
       { name: Occupation.name, schema: OccupationSchema },
     ]),
+    PaypowerModule,
   ],
   controllers: [UserSelectionController],
   providers: [UserSelectionService],

@@ -37,6 +37,7 @@ export class UserSelectionController {
     const responseData = {
       payPowerScore: result.payPowerScore,
       marketGapDetected: result.marketGap,
+      payPowerReport: result.payPowerReport,
       user_selection_id: result._id,
     };
 

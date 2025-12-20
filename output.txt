@@ -1,0 +1,13 @@
+Based on the `main.ts` file, your application is configured with URI-based versioning, and the default version is '1'. This means all routes are automatically prefixed with `/v1`.
+
+Additionally, the application is configured to run on `process.env.PORT` or `3000` by default. You are trying to access it on port `5000`.
+
+If you have configured the `PORT` environment variable to `5000`, then the correct URL to access the API, including the version prefix, is:
+
+`http://localhost:5000/v1/paypower?score=72`
+
+If you have not set the `PORT` environment variable, the application is likely running on port `3000`, and the URL would be:
+
+`http://localhost:3000/v1/paypower?score=72`
+
+Please try accessing the API with the version prefix in the URL.

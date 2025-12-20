@@ -15,6 +15,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { OccupationModule } from './occupation/occupation.module';
 import { UserSelectionModule } from './modules/user-selection/user-selection.module';
 import { PaymentModule } from './payment/payment.module';
+import { PaypowerModule } from './modules/paypower/paypower.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { PaymentModule } from './payment/payment.module';
     SharedModule,
     OccupationModule,
     UserSelectionModule,
+    PaypowerModule,
   ],
   controllers: [AppController],
   providers: [

@@ -12,6 +12,8 @@ import {
   OccupationDocument,
 } from '../../occupation/occupation.schema';
 
+import { PaypowerService } from '../paypower/paypower.service';
+
 type BenchmarkKey = 'A_PCT10' | 'A_MEDIAN' | 'A_PCT90';
 
 export interface PayPowerScoreResult {
@@ -30,6 +32,7 @@ export interface PayPowerScoreResult {
     A_MEDIAN?: number;
     A_PCT90?: number;
   };
+  payPowerReport: any;
 }
 
 @Injectable()
@@ -39,6 +42,7 @@ export class UserSelectionService {
     private userSelectionModel: Model<UserSelectionDocument>,
     @InjectModel(Occupation.name)
     private occupationModel: Model<OccupationDocument>,
+    private paypowerService: PaypowerService,
   ) {}
 
   async create(
@@ -78,6 +82,9 @@ export class UserSelectionService {
       (compensationValue / benchmarkValue) * 100,
     );
 
+    const payPowerReport =
+      this.paypowerService.getPaypowerReport(payPowerScore);
+
     const marketGapValue =
       compensationValue < benchmarkValue
         ? Math.round(
@@ -114,6 +121,7 @@ export class UserSelectionService {
         A_MEDIAN: occupation.A_MEDIAN,
         A_PCT90: occupation.A_PCT90,
       },
+      payPowerReport,
     };
   }
 
