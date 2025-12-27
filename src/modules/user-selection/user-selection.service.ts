@@ -29,7 +29,9 @@ export interface PayPowerScoreResult {
   marketGap: string;
   salaryBands: {
     A_PCT10?: number;
+    A_PCT25?: number;
     A_MEDIAN?: number;
+    A_PCT75?: number;
     A_PCT90?: number;
   };
   payPowerReport: any;
@@ -43,7 +45,7 @@ export class UserSelectionService {
     @InjectModel(Occupation.name)
     private occupationModel: Model<OccupationDocument>,
     private paypowerService: PaypowerService,
-  ) {}
+  ) { }
 
   async create(
     createUserSelectionDto: CreateUserSelectionDto,
@@ -63,45 +65,62 @@ export class UserSelectionService {
     return this.userSelectionModel.find().exec();
   }
 
+  private calculatePayPowerScore(
+    compensation: number,
+    occupation: any,
+  ): { score: number; marketGap: string } {
+    const {
+      A_PCT10,
+      A_PCT25,
+      A_MEDIAN,
+      A_PCT75,
+      A_PCT90,
+    } = occupation;
+
+    let score: number;
+    let marketGap: string;
+
+    if (compensation < A_PCT10) {
+      score = 15;
+      marketGap = `${Math.round(((A_PCT10 - compensation) / A_PCT10) * 100)}% Below Market`;
+    } else if (compensation < A_PCT25) {
+      score = 30;
+      marketGap = `${Math.round(((A_PCT25 - compensation) / A_PCT25) * 100)}% Below Market`;
+    } else if (compensation < A_MEDIAN) {
+      score = 50;
+      marketGap = `${Math.round(((A_MEDIAN - compensation) / A_MEDIAN) * 100)}% Below Market`;
+    } else if (compensation < A_PCT75) {
+      score = 70;
+      marketGap = 'At Market';
+    } else if (compensation < A_PCT90) {
+      score = 85;
+      marketGap = 'Above Market';
+    } else {
+      score = 95;
+      marketGap = 'Top 10% of Market';
+    }
+
+    return { score, marketGap };
+  }
+
   async evaluatePayPower(
     dto: CreateUserSelectionDto,
   ): Promise<PayPowerScoreResult> {
     const compensationValue = this.getCompensationValue(dto.compensation);
     const occupation = await this.findOccupation(dto.currentRole);
 
-    const benchmarkKey = this.getBenchmarkKey(dto.experience);
-    const benchmarkValue = occupation[benchmarkKey];
-
-    if (!benchmarkValue) {
-      throw new BadRequestException(
-        `No ${benchmarkKey} benchmark available for role ${dto.currentRole}`,
-      );
-    }
-
-    const payPowerScore = Math.round(
-      (compensationValue / benchmarkValue) * 100,
+    const { score, marketGap } = this.calculatePayPowerScore(
+      compensationValue,
+      occupation,
     );
 
     const payPowerReport =
-      this.paypowerService.getPaypowerReport(payPowerScore);
+      this.paypowerService.getPaypowerReport(score);
 
-    const marketGapValue =
-      compensationValue < benchmarkValue
-        ? Math.round(
-            ((benchmarkValue - compensationValue) / benchmarkValue) * 100,
-          )
-        : 0;
-
-    const marketGap =
-      compensationValue < benchmarkValue
-        ? `${marketGapValue}% Below Market`
-        : 'At or Above Market';
-
-    // Persist this evaluation in the UserSelection collection
     const createdSelection = await this.userSelectionModel.create({
       ...dto,
       compensationValue,
-      payPowerScore: String(payPowerScore),
+      payPowerScore: String(score),
       marketGap,
     });
 
@@ -112,18 +131,21 @@ export class UserSelectionService {
       location: dto.location,
       compensationRange: dto.compensation,
       compensationValue,
-      benchmarkKey,
-      benchmarkValue,
-      payPowerScore,
+      benchmarkKey: this.getBenchmarkKey(dto.experience),
+      benchmarkValue: occupation.A_MEDIAN ?? 0,
+      payPowerScore: score,
       marketGap,
       salaryBands: {
         A_PCT10: occupation.A_PCT10,
+        A_PCT25: occupation.A_PCT25,
         A_MEDIAN: occupation.A_MEDIAN,
+        A_PCT75: occupation.A_PCT75,
         A_PCT90: occupation.A_PCT90,
       },
       payPowerReport,
     };
   }
+
 
   private async findOccupation(title: string): Promise<Occupation> {
     const regex = new RegExp(`^${this.escapeRegex(title)}$`, 'i');

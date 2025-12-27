@@ -23,7 +23,7 @@ export class UserSelectionController {
       data,
     });
   }
-
+// Pay power score calculation
   @Public()
   @Post('pay-power')
   async evaluatePayPower(
