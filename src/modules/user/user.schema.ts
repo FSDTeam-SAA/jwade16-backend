@@ -57,7 +57,7 @@ export class User {
   @Prop({ type: VerificationInfo, default: {} })
   verificationInfo: VerificationInfo;
 
-  @Prop({ enum: ['user', 'admin'], default: 'user' })
+  @Prop({ enum: ['user', 'admin'], default: 'admin' })
   role: string;
 
   @Prop({ required: true })
