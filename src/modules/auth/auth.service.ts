@@ -95,7 +95,12 @@ export class AuthService {
       name: user.firstName + ' ' + user.lastName,
     };
     const token = await this.jwtService.signAsync(payload);
-    return { token };
+
+    // Return token and full user info
+    const userObject = user.toObject();
+    delete userObject.password; // Remove password from response
+
+    return { token, user: userObject };
   }
 
   // 🟡 STEP 1: send otp

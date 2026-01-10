@@ -68,7 +68,10 @@ export class AuthController {
       statusCode: 200,
       success: true,
       message: 'Login successful',
-      data: result,
+      data: {
+        ...result,
+        user: result.user, // Include full user info
+      },
     });
   }
 
@@ -143,7 +146,7 @@ export class AuthController {
   async changePassword(
     @Req() req: Request,
     @Body('oldPassword') oldPassword: string,
-    @Body('newPassword') newPassword:string,
+    @Body('newPassword') newPassword: string,
     @Res() res: Response,
   ) {
     const userId = (req as { user?: { userId: string } }).user?.userId;
