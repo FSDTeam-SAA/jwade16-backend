@@ -16,6 +16,7 @@ import { OccupationModule } from './occupation/occupation.module';
 import { UserSelectionModule } from './modules/user-selection/user-selection.module';
 import { PaymentModule } from './payment/payment.module';
 import { PaypowerModule } from './modules/paypower/paypower.module';
+import { CompensationModule } from './modules/compensation/compensation.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { PaypowerModule } from './modules/paypower/paypower.module';
     OccupationModule,
     UserSelectionModule,
     PaypowerModule,
+    CompensationModule,
   ],
   controllers: [AppController],
   providers: [
