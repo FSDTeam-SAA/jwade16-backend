@@ -13,6 +13,8 @@ import { CreateCompensationDto } from './dto/create-compensation.dto';
 import { UpdateCompensationDto } from './dto/update-compensation.dto';
 import { ICompensation } from './compensation.schema';
 import { Public } from '../../common/decorators/public.decorator';
+import { ApiResponse } from '../../common/utils/api-response.util';
+import { IPaginatedResponse } from '../../common/interfaces/api-response.interface';
 
 @Controller('compensation')
 export class CompensationController {
@@ -40,12 +42,23 @@ export class CompensationController {
    */
   @Public()
   @Get()
-  async findAll(): Promise<{ message: string; data: ICompensation[] }> {
-    const data = await this.compensationService.findAll();
-    return {
-      message: 'Compensation records retrieved successfully',
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<IPaginatedResponse<ICompensation>> {
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.max(Math.min(Number(limit) || 10, 100), 1);
+
+    const { data, meta } = await this.compensationService.findAllPaginated(
+      pageNum,
+      limitNum,
+    );
+
+    return ApiResponse.paginated(
+      'Compensation records retrieved successfully',
       data,
-    };
+      meta,
+    );
   }
 
   /**

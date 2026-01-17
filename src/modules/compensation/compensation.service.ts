@@ -8,6 +8,8 @@ import { Model } from 'mongoose';
 import { CreateCompensationDto } from './dto/create-compensation.dto';
 import { UpdateCompensationDto } from './dto/update-compensation.dto';
 import { ICompensation } from './compensation.schema';
+import { Pagination } from '../../common/utils/pagination.util';
+import { IPaginationMeta } from '../../common/interfaces/api-response.interface';
 
 @Injectable()
 export class CompensationService {
@@ -35,6 +37,30 @@ export class CompensationService {
    */
   async findAll(): Promise<ICompensation[]> {
     return await this.compensationModel.find().exec();
+  }
+
+  /**
+   * Get compensation records with pagination
+   */
+  async findAllPaginated(
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: ICompensation[]; meta: IPaginationMeta }> {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.max(Math.min(Number(limit) || 10, 100), 1);
+
+    const total = await this.compensationModel.countDocuments().exec();
+    const skip = Pagination.getSkip(safePage, safeLimit);
+    const data = await this.compensationModel
+      .find()
+      .skip(skip)
+      .limit(safeLimit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const meta = Pagination.calculatePagination(safePage, safeLimit, total);
+
+    return { data, meta };
   }
 
   /**
