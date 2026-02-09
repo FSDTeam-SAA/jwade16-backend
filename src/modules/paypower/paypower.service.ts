@@ -13,7 +13,12 @@ export class PaypowerService {
   }
 
   getPaypowerReport(score: number) {
-    const report = this.paypowerData.payPowerReports.find((r) => {
+    const reports = this.paypowerData?.freeReport?.payPowerReports;
+    if (!Array.isArray(reports)) {
+      return null;
+    }
+
+    const report = reports.find((r) => {
       const [min, max] = r.scoreRange.split('-').map(Number);
       return score >= min && score <= max;
     });
