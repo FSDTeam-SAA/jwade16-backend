@@ -4,12 +4,16 @@ import * as path from 'path';
 
 @Injectable()
 export class PaypowerService {
-  private readonly paypowerData: any;
+  private readonly paypowerData: {
+    freeReport?: { payPowerReports?: Array<{ scoreRange: string }> };
+  };
 
   constructor() {
     const filePath = path.join(process.cwd(), 'paypowerScoreContent.json');
     const fileContent = fs.readFileSync(filePath, 'utf-8');
-    this.paypowerData = JSON.parse(fileContent);
+    this.paypowerData = JSON.parse(fileContent) as {
+      freeReport?: { payPowerReports?: Array<{ scoreRange: string }> };
+    };
   }
 
   getPaypowerReport(score: number) {

@@ -23,7 +23,11 @@ export class PaypowerController {
       throw new BadRequestException('Invalid score provided.');
     }
 
-    const report = this.paypowerService.getPaypowerReport(scoreNumber);
+    const report: Record<string, unknown> | null =
+      this.paypowerService.getPaypowerReport(scoreNumber) as Record<
+        string,
+        unknown
+      > | null;
     if (!report) {
       throw new NotFoundException('No report found for the given score.');
     }
@@ -47,7 +51,11 @@ export class PaypowerController {
       throw new BadRequestException('Invalid score provided.');
     }
 
-    const report = this.paypowerService.getPaypowerReport(scoreNumber);
+    const report: Record<string, unknown> | null =
+      this.paypowerService.getPaypowerReport(scoreNumber) as Record<
+        string,
+        unknown
+      > | null;
     if (!report) {
       throw new NotFoundException('No paid report found for the given score.');
     }
