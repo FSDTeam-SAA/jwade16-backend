@@ -26,12 +26,36 @@ export class PaypowerController {
     const report = this.paypowerService.getPaypowerReport(scoreNumber);
     if (!report) {
       throw new NotFoundException('No report found for the given score.');
-    } 
+    }
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: 'Paypower report retrieved successfully',
+      message: 'Free paypower report retrieved successfully',
+      data: report,
+    });
+  }
+
+  @Public()
+  @Get('paid')
+  getPaidReportBreakdown(
+    @Query('score') score: string,
+    @Res() res: Response,
+  ): void {
+    const scoreNumber = parseInt(score, 10);
+    if (isNaN(scoreNumber)) {
+      throw new BadRequestException('Invalid score provided.');
+    }
+
+    const report = this.paypowerService.getPaypowerReport(scoreNumber);
+    if (!report) {
+      throw new NotFoundException('No paid report found for the given score.');
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'Paid paypower report retrieved successfully',
       data: report,
     });
   }
