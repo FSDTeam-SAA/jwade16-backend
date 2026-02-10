@@ -1,109 +1,152 @@
 {
-  "freeReport": {
-    "payPowerReports": [
-      {
-        "scoreRange": "0-44",
-        "label": "Pay Power Potential: Weak",
-        "description": "Your negotiating leverage is currently constrained. This does not mean you're underperforming or underpaid—it means the balance of power in the market isn't strongly in your favor right now.",
-        "recommendedActions": [
-          "Avoid high-stakes negotiation or risky moves",
-          "Focus on building leverage before making a change",
-          "Invest in skills, role expansion, or market repositioning",
-          "Treat this as a setup phase, not a verdict"
+  "meta": {
+    "score_range": {
+      "min": 0,
+      "max": 100,
+      "type": "integer"
+    },
+    "display_rules": {
+      "always_show_numeric_score": true,
+      "always_show_label": true,
+      "inclusive_bounds": true
+    },
+    "language_constraints": {
+      "disallowed_terms": ["detected", "flag", "risk", "deficiency", "sue"],
+      "preferred_terms": [
+        "leverage",
+        "position",
+        "potential",
+        "constraints",
+        "timing",
+        "options"
+      ]
+    }
+  },
+
+  "free_report": {
+    "headline": {
+      "format": "Pay Power Potential: {{tier}}"
+    },
+    "supporting_line": "Your Pay Power Score™ is {{score}}.",
+
+    "tiers": {
+      "strong": {
+        "label": "Pay Power Potential: Strong",
+        "score_range": {
+          "min": 70,
+          "max": 100
+        },
+        "description": "You're operating from a position of real leverage. Your skills, experience, and market positioning give you options whether that's negotiating, exploring opportunities, or being selective about your next move.",
+        "recommended_actions": [
+          "Consider negotiating compensation, scope, or role level",
+          "Be selective—avoid lateral or low-impact moves",
+          "Pressure-test market value before accepting offers",
+          "Focus on strategic, not reactive, decisions"
         ]
       },
-      {
-        "scoreRange": "45-69",
+
+      "moderate": {
         "label": "Pay Power Potential: Moderate",
+        "score_range": {
+          "min": 46,
+          "max": 69
+        },
         "description": "You have some leverage, but it's uneven. Certain factors are working in your favor, while others may limit your ability to negotiate or move freely right now.",
-        "recommendedActions": [
+        "recommended_actions": [
           "Be intentional about when and how you negotiate",
           "Strengthen areas that limit leverage (skills, visibility, scope)",
           "Avoid impulsive career moves",
           "Use data and timing to guide decisions"
         ]
       },
-      {
-        "scoreRange": "70-100",
-        "label": "Pay Power Potential: Strong",
-        "description": "You're operating from a position of real leverage. Your skills, experience, and market positioning give you options—whether that's negotiating, exploring opportunities, or being selective about your next move.",
-        "recommendedActions": [
-          "Consider negotiating compensation, scope, or role level",
-          "Be selective—avoid lateral or low-impact moves",
-          "Pressure-test market value before accepting offers",
-          "Focus on strategic, not reactive, decisions"
+
+      "weak": {
+        "label": "Pay Power Potential: Weak",
+        "score_range": {
+          "min": 0,
+          "max": 44
+        },
+        "description": "Your negotiating leverage is currently constrained. This does not mean you're underperforming or underpaid it means the balance of power in the market isn't strongly in your favor right now.",
+        "recommended_actions": [
+          "Avoid high-stakes negotiation or risky moves",
+          "Focus on building leverage before making a change",
+          "Invest in skills, role expansion, or market repositioning",
+          "Treat this as a setup phase, not a verdict"
         ]
       }
-    ],
-    "globalDisclaimer": "The Pay Power Score measures leverage, not worth. It reflects your position in the market at a point in time, and it can change."
+    },
+
+    "global_disclaimer": "The Pay Power Score measures leverage not worth. It reflects your position in the market at a point in time, and it can change."
   },
-  "paidReportBreakdown": {
-    "title": "Detailed Pay Power Breakdown",
-    "description": "This section provides deeper context and strategy behind your Pay Power Score. It is designed to help you understand not just where you stand, but what actually moves the score.",
-    "tiers": [
-      {
-        "scoreRange": "0-44",
+
+  "paid_report": {
+    "title": "Pay Power Score",
+    "subtitle": "Detailed Pay Power Breakdown",
+    "intro": "This section provides deeper context and strategy behind your Pay Power Score. It is designed to help you understand not just where you stand, but what actually moves the score.",
+
+    "tiers": {
+      "weak": {
         "label": "Pay Power Potential: Weak",
-        "whatThisMeans": "Your negotiating leverage is currently constrained. This isn't a reflection of your ability or effort—it's a signal that the market does not yet have a strong business case to move aggressively on your behalf. At this level, pushing harder rarely works. Leverage isn't about asking—it's about signal.",
-        "whatThisTypicallyLooksLike": [
+        "score_range": "0–44",
+        "what_this_means": "Your negotiating leverage is currently constrained. This isn't a reflection of your ability or effort it's a signal that the market does not yet have a strong business case to move aggressively on your behalf.\n\nAt this level, pushing harder rarely works. Leverage isn't about asking—it's about signal.",
+        "typical_signs": [
           "Compensation conversations framed around budgets, timing, or policy",
-          "Positive feedback without corresponding comp movement",
+          "Positive feedback without corresponding compensation movement",
           "Promotions discussed, then delayed or quietly deprioritized",
           "Negotiations that stall or go nowhere"
         ],
-        "theCommonMistake": "Trying to negotiate anyway. When leverage is weak, negotiation attempts can actually lower credibility and reinforce the perception that you're misreading your position.",
-        "theRealChallenge": "Staying in this zone too long can flatten your long-term earnings trajectory. Small delays compound. Missed resets become harder to reclaim later. This isn't urgent because you're failing—it's urgent because timing matters.",
-        "whatActuallyMovesTheScore": [
+        "common_mistake": "Trying to negotiate anyway.\n\nWhen leverage is weak, negotiation attempts can actually lower credibility and reinforce the perception that you're misreading your position.",
+        "long_term_consequence": "Staying in this zone too long can flatten your long-term earnings trajectory. Small delays compound.\n\nMissed resets become harder to reclaim later.\n\nThis isn't urgent because you're failing—it's urgent because time matters.",
+        "what_moves_the_score": [
           "Stop negotiating for now",
           "Focus on market signal, not internal validation",
           "Build proof of impact, scope expansion, or role/title alignment",
-          "Increase external optionality before re-entering conversations",
-          "Leverage is built before the conversation, not during it"
+          "Increase external optionality before re-entering conversations"
         ],
-        "strategicNextStep": "Your priority is leverage-building, not negotiation. A targeted strategy can shorten this phase dramatically by focusing only on the highest-impact moves."
+        "strategic_next_step": "Your priority is leverage-building, not negotiation.\n\nA targeted strategy can shorten this phase dramatically by focusing only on the highest-impact moves."
       },
-      {
-        "scoreRange": "45-69",
+
+      "moderate": {
         "label": "Pay Power Potential: Moderate",
-        "whatThisMeans": "You have leverage, but it's uneven. Some factors are working in your favor, while others limit how far you can push. Outcomes here depend heavily on timing, framing, and restraint.",
-        "whatThisTypicallyLooksLike": [
-          "Offers that feel \"almost right\"",
+        "score_range": "45–69",
+        "what_this_means": "You have leverage, but it's uneven.\n\nSome factors are working in your favor, while others limit how far you can push. Outcomes here depend heavily on timing, framing, and restraint.",
+        "typical_signs": [
+          "Offers that feel almost right",
           "Negotiations that succeed sometimes but not consistently",
           "Conservative anchors to avoid friction",
           "Relief after negotiations instead of confidence"
         ],
-        "theCommonMistake": "Confusing fairness with optimality. Employers expect negotiation at this level. Under-anchoring signals uncertainty, not cooperation.",
-        "theRealChallenge": "Small under-anchors compound quietly. A modest concession today can turn into six-figure losses over time. This is the most leverage-sensitive zone—smart moves accelerate you, sloppy ones stall you.",
-        "whatActuallyMovesTheScore": [
+        "common_mistake": "Confusing fairness with optimality.\n\nEmployers expect negotiation at this level. Under-anchoring signals uncertainty, not cooperation.",
+        "long_term_consequence": "Small under-anchors compound quietly.\n\nA modest concession today can turn into six-figure losses over time.\n\nThis is the most leverage-sensitive zone—smart moves accelerate you, sloppy ones stall you.",
+        "what_moves_the_score": [
           "Learn to anchor without flinching",
           "Use total compensation framing, not just salary",
           "Sequence conversations so you never reveal your floor first",
-          "Strengthen the weakest pillar holding your score back",
-          "Precision matters more than pressure"
+          "Strengthen the weakest pillar holding your score back"
         ],
-        "strategicNextStep": "Your goal is to convert partial leverage into consistent wins. With the right structure, this is often the fastest tier to move up from."
+        "strategic_next_step": "Your goal is to convert partial leverage into consistent wins.\n\nWith the right structure, this is often the fastest tier to move up from."
       },
-      {
-        "scoreRange": "70-100",
+
+      "strong": {
         "label": "Pay Power Potential: Strong",
-        "whatThisMeans": "You're operating from a position of real leverage. Employers expect you to negotiate. Recruiters build flexibility into offers. The question is no longer whether you have power—it's how cleanly you deploy it.",
-        "whatThisTypicallyLooksLike": [
+        "score_range": "70–100",
+        "what_this_means": "You're operating from a position of real leverage.\n\nEmployers expect you to negotiate. Recruiters build flexibility into offers. The question is no longer whether you have power—it's how cleanly you deploy it.",
+        "typical_signs": [
           "Strong offers with hidden flexibility",
           "Negotiations that feel controlled, not tense",
           "Influence over role scope, equity, or timing",
           "Optionality across multiple paths"
         ],
-        "theCommonMistake": "Pushing harder instead of playing smarter. At this level, brute-force negotiation can cap upside, damage relationships, or cost long-term optionality.",
-        "theRealChallenge": "Misplaying leverage. The biggest losses here aren't salary—they're equity structure, scope, influence, and future positioning. These mistakes don't show up immediately, but they compound massively.",
-        "whatActuallyMovesTheScore": [
+        "common_mistake": "Pushing harder instead of playing smarter.\n\nAt this level, brute-force negotiation can cap upside, damage relationships, or cost long-term optionality.",
+        "long_term_consequence": "Misplaying leverage.\n\nThe biggest losses here aren't salary—they're equity structure, scope, influence, and future positioning. These mistakes compound quietly but massively.",
+        "what_moves_the_score": [
           "Strategic restraint and silence",
           "Competing signals without threats",
-          "Mastery of equity vs. cash tradeoffs",
-          "Thinking in portfolios, not single offers",
-          "Power here is less about force and more about architecture"
+          "Mastery of equity versus cash tradeoffs",
+          "Thinking in portfolios, not single offers"
         ],
-        "strategicNextStep": "Your leverage is real. The art is deploying it without overplaying your hand. Precision architecture beats pressure."
+        "strategic_next_step": "Power here is less about force and more about architecture."
       }
-    ]
+    }
   }
 }
