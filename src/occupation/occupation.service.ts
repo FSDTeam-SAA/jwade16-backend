@@ -122,6 +122,29 @@ export class OccupationService {
     return `All embeddings generated! Total: ${occupations.length}`;
   }
 
+  async findBestMatch(
+    userInput: string,
+  ): Promise<EmbeddingOccupationDocument | undefined> {
+    const queryEmbedding = await this.openAiService.createEmbedding(userInput);
+
+    const result =
+      await this.embeddingOccupationModel.aggregate<EmbeddingOccupationDocument>(
+        [
+          {
+            $vectorSearch: {
+              index: 'default',
+              path: 'embedding',
+              queryVector: queryEmbedding,
+              numCandidates: 100,
+              limit: 1,
+            },
+          },
+        ],
+      );
+
+    return result[0];
+  }
+
   private toNumber(value: string | number | null | undefined): number | null {
     if (!value) return null;
     return Number(String(value).replace(/,/g, ''));
