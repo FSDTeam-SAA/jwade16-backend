@@ -35,7 +35,10 @@ export class OpenAiService {
       console.log('Embedding created successfully');
       return response.data[0].embedding;
     } catch (error) {
-      console.error('Embedding error:', error.message);
+      console.error(
+        'Embedding error:',
+        error instanceof Error ? error.message : String(error),
+      );
       throw error;
     }
   }
