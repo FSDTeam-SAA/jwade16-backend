@@ -101,8 +101,10 @@ export class OccupationService {
 
   async generateEmbeddingsForAll() {
     const occupations = await this.embeddingOccupationModel.find({
-      embedding: { $exists: false },
+      $or: [{ embedding: { $exists: false } }, { embedding: { $size: 0 } }],
     });
+
+    console.log(`Found ${occupations.length} occupations without embeddings`);
 
     for (const occ of occupations) {
       if (!occ.title) {
@@ -117,7 +119,7 @@ export class OccupationService {
       console.log(`Embedding saved for: ${occ.title}`);
     }
 
-    return 'All embeddings generated!';
+    return `All embeddings generated! Total: ${occupations.length}`;
   }
 
   private toNumber(value: string | number | null | undefined): number | null {
