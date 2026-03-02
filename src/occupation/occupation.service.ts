@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Occupation, OccupationDocument } from './occupation.schema';
+import {
+  embeddingOccupation,
+  EmbeddingOccupationDocument,
+} from '../modules/embedding-occupation/embedding-occupation.schema';
+import { OpenAiService } from '../openai.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -43,6 +48,9 @@ export class OccupationService {
   constructor(
     @InjectModel(Occupation.name)
     private occupationModel: Model<OccupationDocument>,
+    @InjectModel(embeddingOccupation.name)
+    private embeddingOccupationModel: Model<EmbeddingOccupationDocument>,
+    private openAiService: OpenAiService,
   ) {}
 
   async importFromJson(): Promise<{ inserted: number }> {
@@ -72,7 +80,44 @@ export class OccupationService {
   async getUniqueOccupationTitles(): Promise<string[]> {
     const titles = await this.occupationModel.distinct('OCC_TITLE').exec();
     const data = titles.filter((title) => title != null).sort();
+
+    // Check if embeddingOccupation collection is empty
+    const count = await this.embeddingOccupationModel.countDocuments().exec();
+
+    if (count === 0) {
+      // Collection is empty, insert titles
+      const titleDocs = data.map((title) => ({ title }));
+      await this.embeddingOccupationModel.insertMany(titleDocs);
+      console.log(
+        `Inserted ${titleDocs.length} occupation titles into embeddingOccupation`,
+      );
+
+      // Generate embeddings for all newly inserted titles
+      await this.generateEmbeddingsForAll();
+    }
+
     return data;
+  }
+
+  async generateEmbeddingsForAll() {
+    const occupations = await this.embeddingOccupationModel.find({
+      embedding: { $exists: false },
+    });
+
+    for (const occ of occupations) {
+      if (!occ.title) {
+        continue;
+      }
+
+      const embedding = await this.openAiService.createEmbedding(occ.title);
+
+      occ.embedding = embedding;
+      await occ.save();
+
+      console.log(`Embedding saved for: ${occ.title}`);
+    }
+
+    return 'All embeddings generated!';
   }
 
   private toNumber(value: string | number | null | undefined): number | null {

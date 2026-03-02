@@ -17,6 +17,8 @@ import { UserSelectionModule } from './modules/user-selection/user-selection.mod
 import { PaymentModule } from './payment/payment.module';
 import { PaypowerModule } from './modules/paypower/paypower.module';
 import { CompensationModule } from './modules/compensation/compensation.module';
+import { EmbeddingOccupationModule } from './modules/embedding-occupation/embedding-occupation.module';
+import { EmbeddingOccupationService } from './modules/embedding-occupation/embedding-occupation.service';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { CompensationModule } from './modules/compensation/compensation.module';
     UserSelectionModule,
     PaypowerModule,
     CompensationModule,
+    EmbeddingOccupationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -62,6 +65,7 @@ import { CompensationModule } from './modules/compensation/compensation.module';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    EmbeddingOccupationService,
   ],
 })
 export class AppModule {}
