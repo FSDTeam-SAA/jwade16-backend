@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { OpenAiService } from '../../openai.service';
 
 interface ScoreRange {
   min: number;
@@ -64,7 +65,7 @@ interface PayPowerData {
 export class PaypowerService {
   private readonly paypowerData: PayPowerData;
 
-  constructor() {
+  constructor(private readonly openAiService: OpenAiService) {
     const filePath = path.join(process.cwd(), 'paypowerScoreContent.json');
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     this.paypowerData = JSON.parse(fileContent) as PayPowerData;
@@ -81,7 +82,10 @@ export class PaypowerService {
     return matched ?? null;
   }
 
-  getPaypowerReport(score: number) {
+  async getPaypowerReport(
+    score: number,
+    answers?: unknown,
+  ): Promise<Record<string, unknown> | null> {
     const tierLabel = this.getTierLabel(score);
     if (!tierLabel) {
       return null;
@@ -92,6 +96,21 @@ export class PaypowerService {
 
     if (!tierCopy) {
       return null;
+    }
+
+    let personalizedExplanation: string;
+    try {
+      personalizedExplanation =
+        await this.openAiService.generatePersonalizedPaypowerExplanation({
+          score,
+          tierLabel,
+          baseDescription: tierCopy.description,
+          recommendedActions: tierCopy.recommended_actions,
+          answers,
+        });
+    } catch {
+      personalizedExplanation =
+        `${tierCopy.description} Focus first on this step: ${tierCopy.recommended_actions[0] ?? 'Review your current compensation signals and document your next improvement action.'}`.trim();
     }
 
     return {
@@ -105,9 +124,11 @@ export class PaypowerService {
         '{{score}}',
         score.toString(),
       ),
-      description: tierCopy.description,
+      description: personalizedExplanation,
+      staticDescription: tierCopy.description,
       recommendedActions: tierCopy.recommended_actions,
       disclaimer: freeReport.global_disclaimer,
+      personalized: true,
     };
   }
 

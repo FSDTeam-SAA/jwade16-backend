@@ -15,19 +15,45 @@ import type { Response } from 'express';
 export class PaypowerController {
   constructor(private readonly paypowerService: PaypowerService) {}
 
+  private parseAnswers(answers?: string, context?: string): unknown {
+    if (!answers && !context) {
+      return undefined;
+    }
+
+    let parsedAnswers: unknown = answers;
+    if (answers) {
+      try {
+        parsedAnswers = JSON.parse(answers) as unknown;
+      } catch {
+        parsedAnswers = answers;
+      }
+    }
+
+    return {
+      answers: parsedAnswers,
+      context,
+    };
+  }
+
   @Public()
   @Get()
-  getPaypowerReport(@Query('score') score: string, @Res() res: Response): void {
-    const scoreNumber = parseInt(score, 10);
-    if (isNaN(scoreNumber)) {
+  async getPaypowerReport(
+    @Query('score') score: string,
+    @Query('answers') answers: string,
+    @Query('context') context: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const scoreNumber = Number.parseInt(score, 10);
+    if (Number.isNaN(scoreNumber)) {
       throw new BadRequestException('Invalid score provided.');
     }
 
-    const report: Record<string, unknown> | null =
-      this.paypowerService.getPaypowerReport(scoreNumber) as Record<
-        string,
-        unknown
-      > | null;
+    const report = await Promise.resolve(
+      this.paypowerService.getPaypowerReport(
+        scoreNumber,
+        this.parseAnswers(answers, context),
+      ),
+    );
     if (!report) {
       throw new NotFoundException('No report found for the given score.');
     }
@@ -43,8 +69,8 @@ export class PaypowerController {
   @Public()
   @Get('pay')
   getPayReport(@Query('score') score: string, @Res() res: Response): void {
-    const scoreNumber = parseInt(score, 10);
-    if (isNaN(scoreNumber)) {
+    const scoreNumber = Number.parseInt(score, 10);
+    if (Number.isNaN(scoreNumber)) {
       throw new BadRequestException('Invalid score provided.');
     }
 
@@ -71,8 +97,8 @@ export class PaypowerController {
     @Query('score') score: string,
     @Res() res: Response,
   ): void {
-    const scoreNumber = parseInt(score, 10);
-    if (isNaN(scoreNumber)) {
+    const scoreNumber = Number.parseInt(score, 10);
+    if (Number.isNaN(scoreNumber)) {
       throw new BadRequestException('Invalid score provided.');
     }
 

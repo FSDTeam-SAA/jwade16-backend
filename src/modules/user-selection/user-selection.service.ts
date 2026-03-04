@@ -45,7 +45,7 @@ export class UserSelectionService {
     @InjectModel(Occupation.name)
     private occupationModel: Model<OccupationDocument>,
     private paypowerService: PaypowerService,
-  ) { }
+  ) {}
 
   async create(
     createUserSelectionDto: CreateUserSelectionDto,
@@ -67,32 +67,26 @@ export class UserSelectionService {
 
   private calculatePayPowerScore(
     compensation: number,
-    occupation: any,
+    occupation: Occupation,
   ): { score: number; marketGap: string } {
-    const {
-      A_PCT10,
-      A_PCT25,
-      A_MEDIAN,
-      A_PCT75,
-      A_PCT90,
-    } = occupation;
+    const { A_PCT10, A_PCT25, A_MEDIAN, A_PCT75, A_PCT90 } = occupation;
 
     let score: number;
     let marketGap: string;
 
-    if (compensation < A_PCT10) {
+    if (compensation < (A_PCT10 ?? 0)) {
       score = 15;
-      marketGap = `${Math.round(((A_PCT10 - compensation) / A_PCT10) * 100)}% Below Market`;
-    } else if (compensation < A_PCT25) {
+      marketGap = `${Math.round((((A_PCT10 ?? 0) - compensation) / (A_PCT10 ?? 1)) * 100)}% Below Market`;
+    } else if (compensation < (A_PCT25 ?? 0)) {
       score = 30;
-      marketGap = `${Math.round(((A_PCT25 - compensation) / A_PCT25) * 100)}% Below Market`;
-    } else if (compensation < A_MEDIAN) {
+      marketGap = `${Math.round((((A_PCT25 ?? 0) - compensation) / (A_PCT25 ?? 1)) * 100)}% Below Market`;
+    } else if (compensation < (A_MEDIAN ?? 0)) {
       score = 50;
-      marketGap = `${Math.round(((A_MEDIAN - compensation) / A_MEDIAN) * 100)}% Below Market`;
-    } else if (compensation < A_PCT75) {
+      marketGap = `${Math.round((((A_MEDIAN ?? 0) - compensation) / (A_MEDIAN ?? 1)) * 100)}% Below Market`;
+    } else if (compensation < (A_PCT75 ?? 0)) {
       score = 70;
       marketGap = 'At Market';
-    } else if (compensation < A_PCT90) {
+    } else if (compensation < (A_PCT90 ?? 0)) {
       score = 85;
       marketGap = 'Above Market';
     } else {
@@ -114,8 +108,26 @@ export class UserSelectionService {
       occupation,
     );
 
-    const payPowerReport =
-      this.paypowerService.getPaypowerReport(score);
+    const payPowerReport = await this.paypowerService.getPaypowerReport(score, {
+      currentRole: dto.currentRole,
+      experience: dto.experience,
+      location: dto.location,
+      compensation: dto.compensation,
+      lastRaise: dto.lastRaise,
+      negotiateCurrentSalary: dto.negotiateCurrentSalary,
+      discussTime: dto.discussTime,
+      howConfident: dto.howConfident,
+      email: dto.email,
+      calculatedSalary: compensationValue,
+      marketGap,
+      benchmarkData: {
+        A_PCT10: occupation.A_PCT10,
+        A_PCT25: occupation.A_PCT25,
+        A_MEDIAN: occupation.A_MEDIAN,
+        A_PCT75: occupation.A_PCT75,
+        A_PCT90: occupation.A_PCT90,
+      },
+    });
 
     const createdSelection = await this.userSelectionModel.create({
       ...dto,
@@ -145,7 +157,6 @@ export class UserSelectionService {
       payPowerReport,
     };
   }
-
 
   private async findOccupation(title: string): Promise<Occupation> {
     const regex = new RegExp(`^${this.escapeRegex(title)}$`, 'i');
@@ -189,7 +200,7 @@ export class UserSelectionService {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  private getCompensationValue(range: string): number {
+  getCompensationValue(range: string): number {
     const normalized = range.toLowerCase().replace(/\s+/g, '');
 
     const rangeMatch = normalized.match(

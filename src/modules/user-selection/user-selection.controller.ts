@@ -23,14 +23,19 @@ export class UserSelectionController {
       data,
     });
   }
-// Pay power score calculation
+  // Pay power score calculation
   @Public()
   @Post('pay-power')
   async evaluatePayPower(
     @Body() createUserSelectionDto: CreateUserSelectionDto,
     @Res() res: Response,
   ) {
-    const result = await this.userSelectionService.evaluatePayPower(
+    const result: {
+      payPowerScore: number;
+      marketGap: string;
+      payPowerReport: string;
+      _id: string;
+    } = await this.userSelectionService.evaluatePayPower(
       createUserSelectionDto,
     );
 
