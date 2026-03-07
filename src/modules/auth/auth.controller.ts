@@ -91,7 +91,7 @@ export class AuthController {
     });
   }
 
-  /**************
+  /************** v v
    * VERIFY OTP *
    **************/
   @Public()
