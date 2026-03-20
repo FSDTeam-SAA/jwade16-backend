@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import configuration from './config/configuration';
 import { AppController } from './app.controller';
@@ -19,6 +20,7 @@ import { PaypowerModule } from './modules/paypower/paypower.module';
 import { CompensationModule } from './modules/compensation/compensation.module';
 import { EmbeddingOccupationModule } from './modules/embedding-occupation/embedding-occupation.module';
 import { EmbeddingOccupationService } from './modules/embedding-occupation/embedding-occupation.service';
+import { JobIngestionModule } from './modules/job-ingestion/job-ingestion.module';
 
 @Module({
   imports: [
@@ -26,6 +28,7 @@ import { EmbeddingOccupationService } from './modules/embedding-occupation/embed
       isGlobal: true,
       load: [configuration],
     }),
+    ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -53,6 +56,7 @@ import { EmbeddingOccupationService } from './modules/embedding-occupation/embed
     PaypowerModule,
     CompensationModule,
     EmbeddingOccupationModule,
+    JobIngestionModule,
   ],
   controllers: [AppController],
   providers: [
