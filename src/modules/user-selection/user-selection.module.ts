@@ -7,6 +7,10 @@ import {
   Occupation,
   OccupationSchema,
 } from '../../occupation/occupation.schema';
+import {
+  JobPosting,
+  JobPostingSchema,
+} from '../job-ingestion/job-posting.schema';
 
 import { PaypowerModule } from '../paypower/paypower.module';
 
@@ -15,6 +19,7 @@ import { PaypowerModule } from '../paypower/paypower.module';
     MongooseModule.forFeature([
       { name: UserSelection.name, schema: UserSelectionSchema },
       { name: Occupation.name, schema: OccupationSchema },
+      { name: JobPosting.name, schema: JobPostingSchema },
     ]),
     PaypowerModule,
   ],

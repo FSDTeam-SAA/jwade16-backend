@@ -11,10 +11,22 @@ import {
   Occupation,
   OccupationDocument,
 } from '../../occupation/occupation.schema';
+import {
+  JobPosting,
+  JobPostingDocument,
+} from '../job-ingestion/job-posting.schema';
 
 import { PaypowerService } from '../paypower/paypower.service';
 
 type BenchmarkKey = 'A_PCT10' | 'A_MEDIAN' | 'A_PCT90';
+
+interface SalaryBands {
+  A_PCT10?: number;
+  A_PCT25?: number;
+  A_MEDIAN?: number;
+  A_PCT75?: number;
+  A_PCT90?: number;
+}
 
 export interface PayPowerScoreResult {
   _id: string;
@@ -41,10 +53,12 @@ export interface PayPowerScoreResult {
 export class UserSelectionService {
   constructor(
     @InjectModel(UserSelection.name)
-    private userSelectionModel: Model<UserSelectionDocument>,
+    private readonly userSelectionModel: Model<UserSelectionDocument>,
     @InjectModel(Occupation.name)
-    private occupationModel: Model<OccupationDocument>,
-    private paypowerService: PaypowerService,
+    private readonly occupationModel: Model<OccupationDocument>,
+    @InjectModel(JobPosting.name)
+    private readonly jobPostingModel: Model<JobPostingDocument>,
+    private readonly paypowerService: PaypowerService,
   ) {}
 
   async create(
@@ -67,9 +81,9 @@ export class UserSelectionService {
 
   private calculatePayPowerScore(
     compensation: number,
-    occupation: Occupation,
+    bands: SalaryBands,
   ): { score: number; marketGap: string } {
-    const { A_PCT10, A_PCT25, A_MEDIAN, A_PCT75, A_PCT90 } = occupation;
+    const { A_PCT10, A_PCT25, A_MEDIAN, A_PCT75, A_PCT90 } = bands;
 
     let score: number;
     let marketGap: string;
@@ -102,10 +116,27 @@ export class UserSelectionService {
   ): Promise<PayPowerScoreResult> {
     const compensationValue = this.getCompensationValue(dto.compensation);
     const occupation = await this.findOccupation(dto.currentRole);
+    const postingBands = await this.deriveSalaryBandsFromJobPostings(
+      dto.currentRole,
+      dto.location,
+    );
+    const effectiveBands = this.mergeSalaryBands(occupation, postingBands);
+
+    if (!effectiveBands.A_MEDIAN) {
+      throw new NotFoundException(
+        `No salary benchmark data found for ${dto.currentRole}`,
+      );
+    }
 
     const { score, marketGap } = this.calculatePayPowerScore(
       compensationValue,
-      occupation,
+      effectiveBands,
+    );
+
+    const benchmarkKey = this.getBenchmarkKey(dto.experience);
+    const benchmarkValue = this.resolveBenchmarkValue(
+      benchmarkKey,
+      effectiveBands,
     );
 
     const payPowerReport = await this.paypowerService.getPaypowerReport(score, {
@@ -121,11 +152,11 @@ export class UserSelectionService {
       calculatedSalary: compensationValue,
       marketGap,
       benchmarkData: {
-        A_PCT10: occupation.A_PCT10,
-        A_PCT25: occupation.A_PCT25,
-        A_MEDIAN: occupation.A_MEDIAN,
-        A_PCT75: occupation.A_PCT75,
-        A_PCT90: occupation.A_PCT90,
+        A_PCT10: effectiveBands.A_PCT10,
+        A_PCT25: effectiveBands.A_PCT25,
+        A_MEDIAN: effectiveBands.A_MEDIAN,
+        A_PCT75: effectiveBands.A_PCT75,
+        A_PCT90: effectiveBands.A_PCT90,
       },
     });
 
@@ -143,22 +174,22 @@ export class UserSelectionService {
       location: dto.location,
       compensationRange: dto.compensation,
       compensationValue,
-      benchmarkKey: this.getBenchmarkKey(dto.experience),
-      benchmarkValue: occupation.A_MEDIAN ?? 0,
+      benchmarkKey,
+      benchmarkValue,
       payPowerScore: score,
       marketGap,
       salaryBands: {
-        A_PCT10: occupation.A_PCT10,
-        A_PCT25: occupation.A_PCT25,
-        A_MEDIAN: occupation.A_MEDIAN,
-        A_PCT75: occupation.A_PCT75,
-        A_PCT90: occupation.A_PCT90,
+        A_PCT10: effectiveBands.A_PCT10,
+        A_PCT25: effectiveBands.A_PCT25,
+        A_MEDIAN: effectiveBands.A_MEDIAN,
+        A_PCT75: effectiveBands.A_PCT75,
+        A_PCT90: effectiveBands.A_PCT90,
       },
       payPowerReport,
     };
   }
 
-  private async findOccupation(title: string): Promise<Occupation> {
+  private async findOccupation(title: string): Promise<Occupation | null> {
     const regex = new RegExp(`^${this.escapeRegex(title)}$`, 'i');
 
     const national = await this.occupationModel
@@ -171,11 +202,127 @@ export class UserSelectionService {
       .findOne({ OCC_TITLE: regex })
       .exec();
 
-    if (!anyArea) {
-      throw new NotFoundException(`No occupation data found for ${title}`);
+    return anyArea;
+  }
+
+  private async deriveSalaryBandsFromJobPostings(
+    role: string,
+    location: string,
+  ): Promise<SalaryBands | null> {
+    const exactRegex = new RegExp(`^${this.escapeRegex(role)}$`, 'i');
+    const broadRegex = new RegExp(this.escapeRegex(role), 'i');
+
+    const exactWithLocation = await this.collectSalaryPoints({
+      title: exactRegex,
+      location: { $regex: this.escapeRegex(location), $options: 'i' },
+    });
+    const exact =
+      exactWithLocation.length >= 20
+        ? exactWithLocation
+        : await this.collectSalaryPoints({ title: exactRegex });
+
+    const selected =
+      exact.length >= 20
+        ? exact
+        : await this.collectSalaryPoints({ title: broadRegex });
+
+    if (selected.length < 10) {
+      return null;
     }
 
-    return anyArea;
+    return {
+      A_PCT10: this.percentile(selected, 0.1),
+      A_PCT25: this.percentile(selected, 0.25),
+      A_MEDIAN: this.percentile(selected, 0.5),
+      A_PCT75: this.percentile(selected, 0.75),
+      A_PCT90: this.percentile(selected, 0.9),
+    };
+  }
+
+  private async collectSalaryPoints(
+    filter: Record<string, unknown>,
+  ): Promise<number[]> {
+    const rows = await this.jobPostingModel
+      .find(
+        {
+          ...filter,
+          $or: [{ salaryMin: { $gt: 0 } }, { salaryMax: { $gt: 0 } }],
+        },
+        { salaryMin: 1, salaryMax: 1, _id: 0 },
+      )
+      .limit(3000)
+      .lean()
+      .exec();
+
+    return rows
+      .map((row) => {
+        const min = this.ensurePositiveNumber(row.salaryMin);
+        const max = this.ensurePositiveNumber(row.salaryMax);
+
+        if (min && max) {
+          return Math.round((min + max) / 2);
+        }
+
+        return min ?? max;
+      })
+      .filter((value): value is number => typeof value === 'number');
+  }
+
+  private ensurePositiveNumber(value: unknown): number | undefined {
+    return typeof value === 'number' && value > 0 ? value : undefined;
+  }
+
+  private percentile(values: number[], fraction: number): number | undefined {
+    if (values.length === 0) {
+      return undefined;
+    }
+
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.max(
+      0,
+      Math.min(sorted.length - 1, Math.round((sorted.length - 1) * fraction)),
+    );
+    return sorted[index];
+  }
+
+  private mergeSalaryBands(
+    occupation: Occupation | null,
+    postingBands: SalaryBands | null,
+  ): SalaryBands {
+    const occupationBands: SalaryBands = {
+      A_PCT10: occupation?.A_PCT10,
+      A_PCT25: occupation?.A_PCT25,
+      A_MEDIAN: occupation?.A_MEDIAN,
+      A_PCT75: occupation?.A_PCT75,
+      A_PCT90: occupation?.A_PCT90,
+    };
+
+    if (!postingBands) {
+      return occupationBands;
+    }
+
+    return {
+      A_PCT10: postingBands.A_PCT10 ?? occupationBands.A_PCT10,
+      A_PCT25: postingBands.A_PCT25 ?? occupationBands.A_PCT25,
+      A_MEDIAN: postingBands.A_MEDIAN ?? occupationBands.A_MEDIAN,
+      A_PCT75: postingBands.A_PCT75 ?? occupationBands.A_PCT75,
+      A_PCT90: postingBands.A_PCT90 ?? occupationBands.A_PCT90,
+    };
+  }
+
+  private resolveBenchmarkValue(
+    key: BenchmarkKey,
+    salaryBands: SalaryBands,
+  ): number {
+    if (key === 'A_PCT10') {
+      return salaryBands.A_PCT10 ?? salaryBands.A_MEDIAN ?? 0;
+    }
+
+    if (key === 'A_PCT90') {
+      return salaryBands.A_PCT90 ?? salaryBands.A_MEDIAN ?? 0;
+    }
+
+    return salaryBands.A_MEDIAN ?? 0;
   }
 
   private getBenchmarkKey(experience: string): BenchmarkKey {
@@ -197,34 +344,36 @@ export class UserSelectionService {
   }
 
   private escapeRegex(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = /[.*+?^${}()|[\]\\]/g;
+    return value.replaceAll(pattern, String.raw`\$&`);
   }
 
   getCompensationValue(range: string): number {
-    const normalized = range.toLowerCase().replace(/\s+/g, '');
+    const normalized = range.toLowerCase().replaceAll(/\s+/g, '');
 
-    const rangeMatch = normalized.match(
-      /\$?(\d{1,3})(k)?-\$?(\d{1,3})(k)?\+?/i,
-    );
+    const rangeRegex = /\$?(\d{1,3})(k)?-\$?(\d{1,3})(k)?\+?/i;
+    const rangeMatch = rangeRegex.exec(normalized);
     if (rangeMatch) {
       const low = Number(rangeMatch[1]) * (rangeMatch[2] ? 1000 : 1);
       const high = Number(rangeMatch[3]) * (rangeMatch[4] ? 1000 : 1);
       return Math.round((low + high) / 2);
     }
 
-    const lowerMatch = normalized.match(/under\$?(\d{1,3})(k)?/i);
+    const lowerRegex = /under\$?(\d{1,3})(k)?/i;
+    const lowerMatch = lowerRegex.exec(normalized);
     if (lowerMatch) {
       const cap = Number(lowerMatch[1]) * (lowerMatch[2] ? 1000 : 1);
       return Math.round(cap * 0.9);
     }
 
-    const plusMatch = normalized.match(/\$?(\d{1,3})(k)?\+/i);
+    const plusRegex = /\$?(\d{1,3})(k)?\+/i;
+    const plusMatch = plusRegex.exec(normalized);
     if (plusMatch) {
       const base = Number(plusMatch[1]) * (plusMatch[2] ? 1000 : 1);
       return Math.round(base * 1.15);
     }
 
-    const numeric = Number(range.replace(/[^\d.]/g, ''));
+    const numeric = Number(range.replaceAll(/[^\d.]/g, ''));
     if (!Number.isNaN(numeric) && numeric > 0) {
       return numeric;
     }

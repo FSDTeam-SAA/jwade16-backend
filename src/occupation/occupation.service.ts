@@ -3,12 +3,16 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Occupation, OccupationDocument } from './occupation.schema';
 import {
+  JobPosting,
+  JobPostingDocument,
+} from '../modules/job-ingestion/job-posting.schema';
+import {
   embeddingOccupation,
   EmbeddingOccupationDocument,
 } from '../modules/embedding-occupation/embedding-occupation.schema';
 import { OpenAiService } from '../openai.service';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 interface RawOccupation {
   AREA?: number;
@@ -47,10 +51,12 @@ interface RawOccupation {
 export class OccupationService {
   constructor(
     @InjectModel(Occupation.name)
-    private occupationModel: Model<OccupationDocument>,
+    private readonly occupationModel: Model<OccupationDocument>,
+    @InjectModel(JobPosting.name)
+    private readonly jobPostingModel: Model<JobPostingDocument>,
     @InjectModel(embeddingOccupation.name)
-    private embeddingOccupationModel: Model<EmbeddingOccupationDocument>,
-    private openAiService: OpenAiService,
+    private readonly embeddingOccupationModel: Model<EmbeddingOccupationDocument>,
+    private readonly openAiService: OpenAiService,
   ) {}
 
   async importFromJson(): Promise<{ inserted: number }> {
@@ -78,35 +84,32 @@ export class OccupationService {
   }
 
   async getUniqueOccupationTitles(): Promise<string[]> {
-    const titles = await this.occupationModel.distinct('OCC_TITLE').exec();
-    const data = titles.filter((title) => title != null).sort();
+    const [occupationTitles, jobTitles] = await Promise.all([
+      this.occupationModel.distinct('OCC_TITLE').exec(),
+      this.jobPostingModel.distinct('title').exec(),
+    ]);
 
-    // Check if embeddingOccupation collection is empty
-    const count = await this.embeddingOccupationModel.countDocuments().exec();
+    const data = this.normalizeAndDedupeTitles([
+      ...occupationTitles,
+      ...jobTitles,
+    ]);
 
-    if (count === 0) {
-      // Collection is empty, insert titles
-      const titleDocs = data.map((title) => ({ title }));
-      await this.embeddingOccupationModel.insertMany(titleDocs);
-      console.log(
-        `Inserted ${titleDocs.length} occupation titles into embeddingOccupation`,
-      );
-
-      // Generate embeddings for all newly inserted titles
-      await this.generateEmbeddingsForAll();
-    }
+    await this.syncEmbeddingTitles(data);
 
     return data;
   }
 
-  async generateEmbeddingsForAll() {
+  async generateEmbeddingsForAll(limit?: number) {
     const occupations = await this.embeddingOccupationModel.find({
       $or: [{ embedding: { $exists: false } }, { embedding: { $size: 0 } }],
     });
 
-    console.log(`Found ${occupations.length} occupations without embeddings`);
+    const pending =
+      typeof limit === 'number' ? occupations.slice(0, limit) : occupations;
 
-    for (const occ of occupations) {
+    console.log(`Found ${pending.length} occupations without embeddings`);
+
+    for (const occ of pending) {
       if (!occ.title) {
         continue;
       }
@@ -119,7 +122,71 @@ export class OccupationService {
       console.log(`Embedding saved for: ${occ.title}`);
     }
 
-    return `All embeddings generated! Total: ${occupations.length}`;
+    return `All embeddings generated! Total: ${pending.length}`;
+  }
+
+  private normalizeAndDedupeTitles(
+    rawTitles: Array<string | null | undefined>,
+  ): string[] {
+    const titleMap = new Map<string, string>();
+
+    for (const rawTitle of rawTitles) {
+      if (typeof rawTitle !== 'string') {
+        continue;
+      }
+
+      const cleaned = rawTitle.replaceAll(/\s+/g, ' ').trim();
+      if (!cleaned) {
+        continue;
+      }
+
+      const normalized = cleaned.toLowerCase();
+      const existing = titleMap.get(normalized);
+
+      if (!existing || cleaned.length < existing.length) {
+        titleMap.set(normalized, cleaned);
+      }
+    }
+
+    return [...titleMap.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  private async syncEmbeddingTitles(titles: string[]): Promise<void> {
+    if (titles.length === 0) {
+      return;
+    }
+
+    const existingDocs = await this.embeddingOccupationModel
+      .find({}, { title: 1, _id: 0 })
+      .lean()
+      .exec();
+
+    const existing = new Set(
+      existingDocs
+        .map((doc) =>
+          typeof doc.title === 'string'
+            ? doc.title.replaceAll(/\s+/g, ' ').trim().toLowerCase()
+            : '',
+        )
+        .filter(Boolean),
+    );
+
+    const newTitles = titles.filter(
+      (title) =>
+        !existing.has(title.replaceAll(/\s+/g, ' ').trim().toLowerCase()),
+    );
+
+    if (newTitles.length > 0) {
+      await this.embeddingOccupationModel.insertMany(
+        newTitles.map((title) => ({ title })),
+        { ordered: false },
+      );
+      console.log(
+        `Inserted ${newTitles.length} new occupation titles into embeddingOccupation`,
+      );
+    }
+
+    await this.generateEmbeddingsForAll(20);
   }
 
   async findBestMatch(
@@ -147,6 +214,6 @@ export class OccupationService {
 
   private toNumber(value: string | number | null | undefined): number | null {
     if (!value) return null;
-    return Number(String(value).replace(/,/g, ''));
+    return Number(String(value).replaceAll(',', ''));
   }
 }
