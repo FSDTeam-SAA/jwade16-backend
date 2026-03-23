@@ -14,14 +14,17 @@ const configuration = () => ({
   },
   jobIngestion: {
     adzuna: {
+      enabled: (process.env.JOB_INGESTION_ADZUNA_ENABLED || 'true') === 'true',
       baseUrl:
         process.env.JOB_INGESTION_ADZUNA_BASE_URL ||
         'https://api.adzuna.com/v1/api/jobs',
       country: process.env.JOB_INGESTION_ADZUNA_COUNTRY || 'us',
+      what: process.env.JOB_INGESTION_ADZUNA_WHAT || 'software engineer',
       appId: process.env.JOB_INGESTION_ADZUNA_APP_ID,
       appKey: process.env.JOB_INGESTION_ADZUNA_APP_KEY,
     },
     usajobs: {
+      enabled: (process.env.JOB_INGESTION_USAJOBS_ENABLED || 'true') === 'true',
       baseUrl:
         process.env.JOB_INGESTION_USAJOBS_BASE_URL ||
         'https://data.usajobs.gov/api/search',
@@ -30,6 +33,8 @@ const configuration = () => ({
         process.env.JOB_INGESTION_USAJOBS_USER_AGENT || 'jwade16-job-ingestion',
     },
     greenhouse: {
+      enabled:
+        (process.env.JOB_INGESTION_GREENHOUSE_ENABLED || 'true') === 'true',
       baseUrl:
         process.env.JOB_INGESTION_GREENHOUSE_BASE_URL ||
         'https://boards-api.greenhouse.io/v1/boards',

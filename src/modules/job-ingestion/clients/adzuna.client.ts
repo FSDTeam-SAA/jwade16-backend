@@ -3,10 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { FetchPageResult } from '../job-ingestion.types';
 import { JobNormalizerService } from '../job-normalizer.service';
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 @Injectable()
 export class AdzunaClient {
   private readonly baseUrl: string;
   private readonly country: string;
+  private readonly what: string;
   private readonly appId: string;
   private readonly appKey: string;
 
@@ -19,6 +22,9 @@ export class AdzunaClient {
       'https://api.adzuna.com/v1/api/jobs';
     this.country =
       this.configService.get<string>('jobIngestion.adzuna.country') ?? 'us';
+    this.what =
+      this.configService.get<string>('jobIngestion.adzuna.what') ??
+      'software engineer';
     this.appId =
       this.configService.get<string>('jobIngestion.adzuna.appId') ?? '';
     this.appKey =
@@ -35,15 +41,37 @@ export class AdzunaClient {
     const searchParams = new URLSearchParams({
       app_id: this.appId,
       app_key: this.appKey,
+      what: this.what,
       results_per_page: String(perPage),
-      content_type: 'application/json',
+      'content-type': 'application/json',
     });
 
     const endpoint = `${this.baseUrl}/${this.country}/search/${page}?${searchParams.toString()}`;
-    const response = await fetch(endpoint);
+
+    let response: Response;
+
+    try {
+      response = await fetch(endpoint, {
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown network error';
+      throw new Error(
+        `Adzuna network request failed: ${message}. Check internet/firewall or set JOB_INGESTION_ADZUNA_BASE_URL.`,
+      );
+    }
 
     if (!response.ok) {
-      throw new Error(`Adzuna API request failed with ${response.status}`);
+      const errorBody = await response.text();
+      const snippet = errorBody.replaceAll(/\s+/g, ' ').trim().slice(0, 180);
+      const details = snippet ? `: ${snippet}` : '';
+      throw new Error(
+        `Adzuna API request failed with ${response.status}${details}`,
+      );
     }
 
     const payload = (await response.json()) as {

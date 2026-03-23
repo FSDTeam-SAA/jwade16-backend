@@ -36,6 +36,23 @@ export class JobIngestionService {
 
   async sync(source?: JobSource): Promise<SyncMetrics[]> {
     if (source) {
+      if (!this.isSourceEnabled(source)) {
+        const now = new Date();
+        return [
+          {
+            source,
+            fetched: 0,
+            inserted: 0,
+            updated: 0,
+            skipped: 0,
+            pagesProcessed: 0,
+            errors: [`${source} source is disabled by configuration`],
+            startedAt: now,
+            finishedAt: now,
+          },
+        ];
+      }
+
       return [await this.syncSource(source)];
     }
 
@@ -57,7 +74,15 @@ export class JobIngestionService {
   }
 
   private getSources(): JobSource[] {
-    return ['adzuna', 'usajobs', 'greenhouse'];
+    const sources: JobSource[] = ['adzuna', 'usajobs', 'greenhouse'];
+
+    return sources.filter((source) => this.isSourceEnabled(source));
+  }
+
+  private isSourceEnabled(source: JobSource): boolean {
+    return (
+      this.configService.get<boolean>(`jobIngestion.${source}.enabled`) ?? true
+    );
   }
 
   private getSourceConfig(source: JobSource): SourceConfig {
@@ -172,7 +197,7 @@ export class JobIngestionService {
         lastMetrics: this.toMetricsRecord(metrics),
       });
 
-      this.logger.error(`[${source}] sync failed`, error);
+      this.logger.warn(`[${source}] sync failed: ${message}`);
       return metrics;
     }
   }
@@ -392,6 +417,11 @@ export class JobIngestionService {
         return await fn();
       } catch (error) {
         lastError = error;
+
+        if (!this.isRetriableError(error)) {
+          break;
+        }
+
         if (attempt >= attempts) {
           break;
         }
@@ -402,6 +432,32 @@ export class JobIngestionService {
     }
 
     throw lastError;
+  }
+
+  private isRetriableError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message.toLowerCase();
+
+    if (message.includes('failed with 400')) {
+      return false;
+    }
+
+    if (message.includes('failed with 401')) {
+      return false;
+    }
+
+    if (message.includes('failed with 403')) {
+      return false;
+    }
+
+    if (message.includes('failed with 404')) {
+      return false;
+    }
+
+    return true;
   }
 
   private async sleep(ms: number): Promise<void> {

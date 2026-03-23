@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { FetchPageResult } from '../job-ingestion.types';
 import { JobNormalizerService } from '../job-normalizer.service';
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 interface UsaJobsResponse {
   SearchResult?: {
     SearchResultCountAll?: number;
@@ -39,21 +41,50 @@ export class UsaJobsClient {
       );
     }
 
+    if (!this.userAgent?.includes('@')) {
+      throw new InternalServerErrorException(
+        'USAJobs User-Agent is missing/invalid. Set JOB_INGESTION_USAJOBS_USER_AGENT to your contact email (required by USAJobs).',
+      );
+    }
+
     const query = new URLSearchParams({
       ResultsPerPage: String(perPage),
       Page: String(page),
     });
 
-    const response = await fetch(`${this.baseUrl}?${query.toString()}`, {
-      headers: {
-        'Authorization-Key': this.apiKey,
-        Host: 'data.usajobs.gov',
-        'User-Agent': this.userAgent,
-      },
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`${this.baseUrl}?${query.toString()}`, {
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        headers: {
+          'Authorization-Key': this.apiKey,
+          Host: 'data.usajobs.gov',
+          'User-Agent': this.userAgent,
+          Accept: 'application/json',
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown network error';
+      throw new Error(
+        `USAJobs network request failed: ${message}. Check internet/firewall or proxy settings.`,
+      );
+    }
 
     if (!response.ok) {
-      throw new Error(`USAJobs API request failed with ${response.status}`);
+      const errorBody = await response.text();
+      const snippet = errorBody.replaceAll(/\s+/g, ' ').trim().slice(0, 180);
+      const details = snippet ? `: ${snippet}` : '';
+      if (response.status === 401) {
+        throw new Error(
+          `USAJobs API request failed with 401. Verify JOB_INGESTION_USAJOBS_API_KEY and JOB_INGESTION_USAJOBS_USER_AGENT (must be a valid contact email)${details}`,
+        );
+      }
+
+      throw new Error(
+        `USAJobs API request failed with ${response.status}${details}`,
+      );
     }
 
     const payload = (await response.json()) as UsaJobsResponse;
