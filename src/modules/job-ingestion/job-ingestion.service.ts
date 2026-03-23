@@ -362,11 +362,17 @@ export class JobIngestionService {
     source: JobSource,
     patch: Partial<JobSyncState>,
   ): Promise<void> {
+    const patchWithoutSource = {
+      ...patch,
+    } as Partial<JobSyncState & { source?: JobSource }>;
+
+    delete patchWithoutSource.source;
+
     await this.jobSyncStateModel
       .updateOne(
         { source },
         {
-          $set: patch,
+          $set: patchWithoutSource,
           $setOnInsert: { source },
         },
         { upsert: true },

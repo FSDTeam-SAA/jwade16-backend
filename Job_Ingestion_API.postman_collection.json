@@ -1,0 +1,174 @@
+{
+  "info": {
+    "name": "Job Ingestion API",
+    "description": "Test collection for job ingestion endpoints",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Sync All Sources",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/sync/all",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "sync", "all"]
+        },
+        "description": "Trigger sync for all three sources (Adzuna, USAJobs, Greenhouse)"
+      },
+      "response": []
+    },
+    {
+      "name": "Sync Adzuna Only",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/sync?source=adzuna",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "sync"],
+          "query": [
+            {
+              "key": "source",
+              "value": "adzuna"
+            }
+          ]
+        },
+        "description": "Sync only Adzuna jobs"
+      },
+      "response": []
+    },
+    {
+      "name": "Sync USAJobs Only",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/sync?source=usajobs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "sync"],
+          "query": [
+            {
+              "key": "source",
+              "value": "usajobs"
+            }
+          ]
+        },
+        "description": "Sync only USAJobs postings"
+      },
+      "response": []
+    },
+    {
+      "name": "Sync Greenhouse Only",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/sync?source=greenhouse",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "sync"],
+          "query": [
+            {
+              "key": "source",
+              "value": "greenhouse"
+            }
+          ]
+        },
+        "description": "Sync only Greenhouse job boards"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/status",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "status"]
+        },
+        "description": "Get sync status for all sources"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Adzuna Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/status?source=adzuna",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "status"],
+          "query": [
+            {
+              "key": "source",
+              "value": "adzuna"
+            }
+          ]
+        },
+        "description": "Get sync status for Adzuna"
+      },
+      "response": []
+    },
+    {
+      "name": "Get USAJobs Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/status?source=usajobs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "status"],
+          "query": [
+            {
+              "key": "source",
+              "value": "usajobs"
+            }
+          ]
+        },
+        "description": "Get sync status for USAJobs"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Greenhouse Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/v1/job-ingestion/status?source=greenhouse",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["v1", "job-ingestion", "status"],
+          "query": [
+            {
+              "key": "source",
+              "value": "greenhouse"
+            }
+          ]
+        },
+        "description": "Get sync status for Greenhouse"
+      },
+      "response": []
+    }
+  ]
+}
