@@ -51,6 +51,14 @@ export interface PayPowerScoreResult {
 
 @Injectable()
 export class UserSelectionService {
+  private readonly roleAliasRules: Array<{ match: RegExp; canonical: string }> =
+    [
+      {
+        match: /\bprogram\s+examiner(s)?\b/i,
+        canonical: 'Management Occupations',
+      },
+    ];
+
   constructor(
     @InjectModel(UserSelection.name)
     private readonly userSelectionModel: Model<UserSelectionDocument>,
@@ -116,11 +124,18 @@ export class UserSelectionService {
   ): Promise<PayPowerScoreResult> {
     const compensationValue = this.getCompensationValue(dto.compensation);
     const occupation = await this.findOccupation(dto.currentRole);
-    const postingBands = await this.deriveSalaryBandsFromJobPostings(
-      dto.currentRole,
-      dto.location,
-    );
-    const effectiveBands = this.mergeSalaryBands(occupation, postingBands);
+    let effectiveBands = this.mergeSalaryBands(occupation, null);
+
+    // Source priority:
+    // 1) Occupation benchmark data (imported from jword salary data.json)
+    // 2) job_postings salary bands from MongoDB (fallback only when needed)
+    if (!effectiveBands.A_MEDIAN) {
+      const postingBands = await this.deriveSalaryBandsFromJobPostings(
+        dto.currentRole,
+        dto.location,
+      );
+      effectiveBands = this.mergeSalaryBands(occupation, postingBands);
+    }
 
     if (!effectiveBands.A_MEDIAN) {
       throw new NotFoundException(
@@ -190,27 +205,62 @@ export class UserSelectionService {
   }
 
   private async findOccupation(title: string): Promise<Occupation | null> {
-    const regex = new RegExp(`^${this.escapeRegex(title)}$`, 'i');
+    const roleVariants = this.buildRoleVariants(title);
 
-    const national = await this.occupationModel
-      .findOne({ OCC_TITLE: regex, AREA: 99 })
-      .exec();
+    for (const variant of roleVariants) {
+      const exactRegex = new RegExp(`^${this.escapeRegex(variant)}$`, 'i');
 
-    if (national) return national;
+      const national = await this.occupationModel
+        .findOne({ OCC_TITLE: exactRegex, AREA: 99 })
+        .exec();
 
-    const anyArea = await this.occupationModel
-      .findOne({ OCC_TITLE: regex })
-      .exec();
+      if (national) {
+        return national;
+      }
 
-    return anyArea;
+      const anyArea = await this.occupationModel
+        .findOne({ OCC_TITLE: exactRegex })
+        .exec();
+
+      if (anyArea) {
+        return anyArea;
+      }
+    }
+
+    const tokens = this.getRoleTokens(title);
+    if (tokens.length > 0) {
+      const tokenQuery = {
+        $and: tokens.map((token) => ({
+          OCC_TITLE: {
+            $regex: String.raw`\b${this.escapeRegex(token)}s?\b`,
+            $options: 'i',
+          },
+        })),
+      };
+
+      const national = await this.occupationModel
+        .findOne({ ...tokenQuery, AREA: 99 })
+        .exec();
+      if (national) {
+        return national;
+      }
+
+      const anyArea = await this.occupationModel.findOne(tokenQuery).exec();
+      if (anyArea) {
+        return anyArea;
+      }
+    }
+
+    return null;
   }
 
   private async deriveSalaryBandsFromJobPostings(
     role: string,
     location: string,
   ): Promise<SalaryBands | null> {
-    const exactRegex = new RegExp(`^${this.escapeRegex(role)}$`, 'i');
-    const broadRegex = new RegExp(this.escapeRegex(role), 'i');
+    const roleVariants = this.buildRoleVariants(role);
+    const exactRegex = this.buildVariantRegex(roleVariants, true);
+    const broadRegex = this.buildVariantRegex(roleVariants, false);
 
     const exactWithLocation = await this.collectSalaryPoints({
       title: exactRegex,
@@ -341,6 +391,60 @@ export class UserSelectionService {
     }
 
     return 'A_PCT90';
+  }
+
+  private buildRoleVariants(role: string): string[] {
+    const normalized = role.replaceAll(/\s+/g, ' ').trim();
+    const withoutParentheses = normalized
+      .replaceAll(/\([^)]*\)/g, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
+    const withoutSpecialChars = withoutParentheses
+      .replaceAll(/[^\p{L}\p{N}\s\-/&]/gu, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
+
+    const variants = [normalized, withoutParentheses, withoutSpecialChars]
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+
+    const aliasMatches = this.roleAliasRules
+      .filter(({ match }) =>
+        [normalized, withoutParentheses, withoutSpecialChars].some((value) =>
+          match.test(value),
+        ),
+      )
+      .map(({ canonical }) => canonical);
+
+    variants.push(...aliasMatches);
+
+    return [...new Set(variants)];
+  }
+
+  private buildVariantRegex(variants: string[], exact: boolean): RegExp {
+    const pattern = variants.map((value) => this.escapeRegex(value)).join('|');
+    return exact
+      ? new RegExp(`^(?:${pattern})$`, 'i')
+      : new RegExp(`(?:${pattern})`, 'i');
+  }
+
+  private getRoleTokens(role: string): string[] {
+    const normalized = role
+      .replaceAll(/\([^)]*\)/g, ' ')
+      .toLowerCase()
+      .replaceAll(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
+
+    if (!normalized) {
+      return [];
+    }
+
+    const ignoredTokens = new Set(['detail', 'position', 'role', 'job']);
+    return normalized
+      .split(' ')
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3 && !ignoredTokens.has(token));
   }
 
   private escapeRegex(value: string): string {
