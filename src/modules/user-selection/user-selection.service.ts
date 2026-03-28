@@ -57,7 +57,42 @@ export class UserSelectionService {
         match: /\bprogram\s+examiner(s)?\b/i,
         canonical: 'Management Occupations',
       },
+      {
+        match: /\b(\.net|dotnet)\s+software\s+(engineer|developer)(s)?\b/i,
+        canonical: 'Software Developers',
+      },
+      {
+        match: /\bsoftware\s+engineer(s)?\b/i,
+        canonical: 'Software Developers',
+      },
+      {
+        match: /\bsoftware\s+developer(s)?\b/i,
+        canonical: 'Software Developers',
+      },
+      {
+        match:
+          /\b(advanced\s+practice\s+nurse|certified\s+nurse\s+anesthetist|crna|nurse\s+anesthetist(s)?)\b/i,
+        canonical: 'Nurse Anesthetists',
+      },
     ];
+
+  private readonly roleNoisePatterns: RegExp[] = [
+    /\brecruit(ment|ing)?\b/i,
+    /\brelocation\b/i,
+    /\bincentive\b/i,
+    /\bauthorized\b/i,
+    /\bedrp\b/i,
+    /\bseasonal\b/i,
+    /\bdetail\b/i,
+    /\brepository\b/i,
+    /\boffices?\b/i,
+    /\bonly\b/i,
+    /\bdepartment\b/i,
+    /\bhq\b/i,
+    /\bpercent\b/i,
+    /\bdisabled\b/i,
+    /\bveteran\b/i,
+  ];
 
   constructor(
     @InjectModel(UserSelection.name)
@@ -229,8 +264,8 @@ export class UserSelectionService {
 
     const tokens = this.getRoleTokens(title);
     if (tokens.length > 0) {
-      const tokenQuery = {
-        $and: tokens.map((token) => ({
+      const tokenOrQuery = {
+        $or: tokens.map((token) => ({
           OCC_TITLE: {
             $regex: String.raw`\b${this.escapeRegex(token)}s?\b`,
             $options: 'i',
@@ -238,16 +273,28 @@ export class UserSelectionService {
         })),
       };
 
-      const national = await this.occupationModel
-        .findOne({ ...tokenQuery, AREA: 99 })
+      const nationalCandidates = await this.occupationModel
+        .find({ ...tokenOrQuery, AREA: 99 })
+        .limit(250)
         .exec();
-      if (national) {
-        return national;
+      const bestNational = this.pickBestOccupationCandidate(
+        nationalCandidates,
+        tokens,
+      );
+      if (bestNational) {
+        return bestNational;
       }
 
-      const anyArea = await this.occupationModel.findOne(tokenQuery).exec();
-      if (anyArea) {
-        return anyArea;
+      const anyAreaCandidates = await this.occupationModel
+        .find(tokenOrQuery)
+        .limit(250)
+        .exec();
+      const bestAnyArea = this.pickBestOccupationCandidate(
+        anyAreaCandidates,
+        tokens,
+      );
+      if (bestAnyArea) {
+        return bestAnyArea;
       }
     }
 
@@ -276,16 +323,37 @@ export class UserSelectionService {
         ? exact
         : await this.collectSalaryPoints({ title: broadRegex });
 
-    if (selected.length < 10) {
+    let points = selected;
+
+    if (points.length < 10) {
+      const tokens = this.getRoleTokens(role);
+      if (tokens.length > 0) {
+        const tokenQuery = {
+          $or: tokens.map((token) => ({
+            title: {
+              $regex: String.raw`\b${this.escapeRegex(token)}s?\b`,
+              $options: 'i',
+            },
+          })),
+        };
+
+        const tokenMatched = await this.collectSalaryPoints(tokenQuery);
+        if (tokenMatched.length > points.length) {
+          points = tokenMatched;
+        }
+      }
+    }
+
+    if (points.length < 3) {
       return null;
     }
 
     return {
-      A_PCT10: this.percentile(selected, 0.1),
-      A_PCT25: this.percentile(selected, 0.25),
-      A_MEDIAN: this.percentile(selected, 0.5),
-      A_PCT75: this.percentile(selected, 0.75),
-      A_PCT90: this.percentile(selected, 0.9),
+      A_PCT10: this.percentile(points, 0.1),
+      A_PCT25: this.percentile(points, 0.25),
+      A_MEDIAN: this.percentile(points, 0.5),
+      A_PCT75: this.percentile(points, 0.75),
+      A_PCT90: this.percentile(points, 0.9),
     };
   }
 
@@ -394,7 +462,7 @@ export class UserSelectionService {
   }
 
   private buildRoleVariants(role: string): string[] {
-    const normalized = role.replaceAll(/\s+/g, ' ').trim();
+    const normalized = this.cleanRoleText(role);
     const withoutParentheses = normalized
       .replaceAll(/\([^)]*\)/g, ' ')
       .replaceAll(/\s+/g, ' ')
@@ -404,7 +472,13 @@ export class UserSelectionService {
       .replaceAll(/\s+/g, ' ')
       .trim();
 
-    const variants = [normalized, withoutParentheses, withoutSpecialChars]
+    const segments = this.extractRoleSegments(withoutSpecialChars);
+    const variants = [
+      normalized,
+      withoutParentheses,
+      withoutSpecialChars,
+      ...segments,
+    ]
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
 
@@ -429,7 +503,7 @@ export class UserSelectionService {
   }
 
   private getRoleTokens(role: string): string[] {
-    const normalized = role
+    const normalized = this.cleanRoleText(role)
       .replaceAll(/\([^)]*\)/g, ' ')
       .toLowerCase()
       .replaceAll(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -440,11 +514,123 @@ export class UserSelectionService {
       return [];
     }
 
-    const ignoredTokens = new Set(['detail', 'position', 'role', 'job']);
-    return normalized
+    const ignoredTokens = new Set([
+      'detail',
+      'position',
+      'role',
+      'job',
+      'recruitment',
+      'recruiting',
+      'relocation',
+      'incentive',
+      'authorized',
+      'edrp',
+      'seasonal',
+      'repository',
+      'only',
+      'department',
+      'offices',
+      'office',
+      'percent',
+      'disabled',
+      'veteran',
+      'hq',
+      'advanced',
+      'practice',
+      'certified',
+    ]);
+
+    const tokens = normalized
       .split(' ')
       .map((token) => token.trim())
       .filter((token) => token.length >= 3 && !ignoredTokens.has(token));
+
+    const uniqueTokens = [...new Set(tokens)];
+    return uniqueTokens.slice(0, 6);
+  }
+
+  private pickBestOccupationCandidate(
+    candidates: Array<{ OCC_TITLE?: string }>,
+    tokens: string[],
+  ): Occupation | null {
+    if (candidates.length === 0 || tokens.length === 0) {
+      return null;
+    }
+
+    let bestScore = 0;
+    let best: { OCC_TITLE?: string } | null = null;
+
+    for (const candidate of candidates) {
+      const title =
+        typeof candidate.OCC_TITLE === 'string' ? candidate.OCC_TITLE : '';
+      if (!title) {
+        continue;
+      }
+
+      const score = this.computeTokenMatchScore(title, tokens);
+      if (score > bestScore) {
+        bestScore = score;
+        best = candidate;
+      }
+    }
+
+    const minScore = tokens.length >= 3 ? 2 : 1;
+    return bestScore >= minScore ? (best as Occupation) : null;
+  }
+
+  private computeTokenMatchScore(title: string, tokens: string[]): number {
+    const normalizedTitle = title.toLowerCase();
+    return tokens.reduce((score, token) => {
+      const tokenRegex = new RegExp(
+        String.raw`\b${this.escapeRegex(token)}s?\b`,
+        'i',
+      );
+      return tokenRegex.test(normalizedTitle) ? score + 1 : score;
+    }, 0);
+  }
+
+  private cleanRoleText(role: string): string {
+    return role
+      .replaceAll('\uFFFD', ' ')
+      .replaceAll(/[?]{2,}/g, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
+  }
+
+  private extractRoleSegments(role: string): string[] {
+    if (!role) {
+      return [];
+    }
+
+    const rawSegments = role
+      .split(/\s*[-/|:,;]\s*/)
+      .map((segment) => segment.replaceAll(/\s+/g, ' ').trim())
+      .filter((segment) => segment.length > 0);
+
+    const relevantSegments = rawSegments.filter(
+      (segment) =>
+        !this.roleNoisePatterns.some((pattern) => pattern.test(segment)),
+    );
+
+    const mergedHead = relevantSegments.slice(0, 2).join(' ').trim();
+
+    const values = [
+      ...relevantSegments,
+      mergedHead,
+      ...relevantSegments.map((segment) =>
+        segment
+          .replaceAll(
+            /\b(advanced|practice|certified|senior|junior|lead|principal)\b/gi,
+            ' ',
+          )
+          .replaceAll(/\s+/g, ' ')
+          .trim(),
+      ),
+    ]
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+
+    return [...new Set(values)];
   }
 
   private escapeRegex(value: string): string {
