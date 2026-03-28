@@ -85,8 +85,14 @@ export class OccupationService {
 
   async getUniqueOccupationTitles(): Promise<string[]> {
     const [occupationTitles, jobTitles] = await Promise.all([
-      this.occupationModel.distinct('OCC_TITLE').exec(),
-      this.jobPostingModel.distinct('title').exec(),
+      this.occupationModel
+        .distinct('OCC_TITLE', { A_MEDIAN: { $gt: 0 } })
+        .exec(),
+      this.jobPostingModel
+        .distinct('title', {
+          $or: [{ salaryMin: { $gt: 0 } }, { salaryMax: { $gt: 0 } }],
+        })
+        .exec(),
     ]);
 
     const data = this.normalizeAndDedupeTitles([
@@ -135,7 +141,7 @@ export class OccupationService {
         continue;
       }
 
-      const cleaned = rawTitle.replaceAll(/\s+/g, ' ').trim();
+      const cleaned = this.cleanTitleForList(rawTitle);
       if (!cleaned) {
         continue;
       }
@@ -149,6 +155,17 @@ export class OccupationService {
     }
 
     return [...titleMap.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  private cleanTitleForList(rawTitle: string): string {
+    return rawTitle
+      .replaceAll('\uFFFD', ' ')
+      .replaceAll(/[?]{2,}/g, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .replaceAll(/^[^\p{L}\p{N}(.]+/gu, '')
+      .replaceAll(/[^\p{L}\p{N})]+$/gu, '')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
   }
 
   private async syncEmbeddingTitles(titles: string[]): Promise<void> {
